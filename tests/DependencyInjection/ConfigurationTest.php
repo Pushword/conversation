@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Pushword\Conversation\Tests\DependencyInjection;
 
 use Pushword\Conversation\DependencyInjection\Configuration;
+use Pushword\Conversation\DependencyInjection\PushwordConversationExtension;
 use Pushword\Conversation\Entity\Message;
 use Pushword\Conversation\PushwordConversationBundle;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
-use Pushword\Conversation\DependencyInjection\PushwordConversationExtension;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBag;
 
