@@ -25,6 +25,6 @@ class ConfigurationTest extends KernelTestCase
         );
 
         $configuration = new Configuration();
-        $this->assertSame(TreeBuilder::class, get_class($configuration->getConfigTreeBuilder()));
+        $this->assertSame(TreeBuilder::class, \get_class($configuration->getConfigTreeBuilder()));
     }
 }
