@@ -6,6 +6,7 @@ namespace Pushword\Conversation\Tests\DependencyInjection;
 
 use Pushword\Conversation\DependencyInjection\Configuration;
 use Pushword\Conversation\Entity\Message;
+use Pushword\Conversation\PushwordConversationBundle;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 
@@ -24,7 +25,12 @@ class ConfigurationTest extends KernelTestCase
             self::$kernel->getContainer()->get('pushword.apps')->get()->get('conversation_notification_interval')
         );
 
+        $bundle = new PushwordConversationBundle();
+        $extension = $bundle->getContainerExtension();
+        $this->assertSame('conversation', $extension->getAlias());
+
         $configuration = new Configuration();
         $this->assertSame(TreeBuilder::class, \get_class($configuration->getConfigTreeBuilder()));
+
     }
 }
