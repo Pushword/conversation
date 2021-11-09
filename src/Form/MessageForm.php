@@ -38,7 +38,7 @@ class MessageForm
             return null;
         }
 
-        if (! \is_object($user = $token->getUser())) {
+        if (false === \is_object($user = $token->getUser())) {
             // e.g. anonymous authentication
             return null;
         }

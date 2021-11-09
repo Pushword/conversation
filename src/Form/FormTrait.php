@@ -229,7 +229,7 @@ trait FormTrait
     protected function getNextStepFunctionName()
     {
         $getFormMethod = 'getStep'.self::$step[$this->getNextStep()];
-        if (! method_exists($this, $getFormMethod)) {
+        if (false === method_exists($this, $getFormMethod)) {
             return false;
         }
 
