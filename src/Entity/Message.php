@@ -21,25 +21,21 @@ class Message
     use TimestampableTrait;
 
     /**
-     * @var string
      * @ORM\Column(type="string", length=180, nullable=true)
      */
-    protected $authorName = '';
+    protected ?string $authorName = '';
 
     /**
-     * @var string
      * @ORM\Column(type="string", length=180, nullable=true)
      */
-    protected $authorEmail = '';
+    protected ?string $authorEmail = '';
 
     /**
-     * @var int
      * @ORM\Column(type="integer", nullable=true)
      */
-    protected $authorIp;
+    protected ?int $authorIp = null;
 
     /**
-     * @var string
      * @ORM\Column(type="string", nullable=true)
      * @Assert\NotBlank
      * @Assert\Length(
@@ -49,21 +45,19 @@ class Message
      *     maxMessage="conversation.content.long"
      * )
      */
-    protected $content;
+    protected ?string $content = null;
 
     /**
      * Identifier referring (most of time, URI).
      *
      * @ORM\Column(type="string", length=180)
-     *
-     * @var string
      */
-    protected $referring;
+    protected ?string $referring = null;
 
     /**
      * @ORM\Column(type="datetime", nullable=true)
      */
-    protected $publishedAt;
+    protected ?\DateTimeInterface $publishedAt = null;
 
     public function __construct()
     {
@@ -106,7 +100,7 @@ class Message
     /**
      * Get the value of authorName.
      *
-     * @return string
+     * @return ?string
      */
     public function getAuthorName()
     {
@@ -128,7 +122,7 @@ class Message
     /**
      * Get the value of authorEmail.
      *
-     * @return string
+     * @return ?string
      */
     public function getAuthorEmail()
     {
@@ -150,7 +144,7 @@ class Message
     /**
      * Get identifier referring.
      *
-     * @return string
+     * @return ?string
      */
     public function getReferring()
     {
@@ -174,7 +168,7 @@ class Message
     /**
      * Get the value of authorIp.
      *
-     * @return int
+     * @return int|null
      */
     public function getAuthorIp()
     {

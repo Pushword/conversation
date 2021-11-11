@@ -18,7 +18,7 @@ final class ConversationFormController extends AbstractController
 {
     private TranslatorInterface $translator;
 
-    private $form;
+    private ?object $form = null;
 
     private array $possibleOrigins = [];
 

@@ -12,10 +12,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class NotificationCommand extends Command
 {
-    /**
-     * @var NewMessageMailNotifier
-     */
-    protected $notifier;
+    protected \Pushword\Conversation\Service\NewMessageMailNotifier $notifier;
 
     public function __construct(
         NewMessageMailNotifier $notifier

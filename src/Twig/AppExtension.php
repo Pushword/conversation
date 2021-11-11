@@ -13,20 +13,15 @@ use Twig\TwigFunction;
 
 class AppExtension extends AbstractExtension
 {
-    /** @var EntityManagerInterface */
-    private $em;
+    private \Doctrine\ORM\EntityManagerInterface $em;
 
-    /** @var \Pushword\Core\Component\App\AppConfig */
-    private $app;
+    private \Pushword\Core\Component\App\AppConfig $app;
 
-    /** @var \Pushword\Core\Component\App\AppPool */
-    private $apps;
+    private \Pushword\Core\Component\App\AppPool $apps;
 
-    /** @var string */
-    private $messageEntity;
+    private string $messageEntity;
 
-    /** @var RouterInterface */
-    private $router;
+    private \Symfony\Component\Routing\RouterInterface $router;
 
     public function __construct(EntityManagerInterface $em, string $messageEntity, AppPool $apps, RouterInterface $router)
     {

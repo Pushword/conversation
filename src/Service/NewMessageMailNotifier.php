@@ -12,17 +12,13 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 
 class NewMessageMailNotifier
 {
-    /** @var MailerInterface */
-    private $mailer;
+    private \Symfony\Component\Mailer\MailerInterface $mailer;
 
-    /** @var AppPool */
-    private $apps;
+    private \Pushword\Core\Component\App\AppPool $apps;
 
-    /** @var EntityManagerInterface */
-    private $em;
+    private \Doctrine\ORM\EntityManagerInterface $em;
 
-    /** @var TranslatorInterface */
-    private $translator;
+    private \Symfony\Contracts\Translation\TranslatorInterface $translator;
 
     private $emailTo;
 
@@ -34,9 +30,9 @@ class NewMessageMailNotifier
 
     private $interval;
 
-    private $message;
+    private string $message;
 
-    private $host;
+    private string $host;
 
     /**
      * Undocumented function.
