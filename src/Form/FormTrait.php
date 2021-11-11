@@ -81,24 +81,24 @@ trait FormTrait
     public function __construct(
         string $messageEntity,
         Request $request,
-        Registry $doctrine,
-        TokenStorageInterface $security,
+        Registry $registry,
+        TokenStorageInterface $tokenStorage,
         FormFactory $formFactory,
         Twig $twig,
         Router $router,
         TranslatorInterface $translator,
-        AppPool $apps
+        AppPool $appPool
     ) {
         $this->request = $request;
-        $this->doctrine = $doctrine;
-        $this->security = $security;
+        $this->doctrine = $registry;
+        $this->security = $tokenStorage;
         $this->formFactory = $formFactory;
         $this->twig = $twig;
         $this->router = $router;
         $this->translator = $translator;
         $this->messageEntity = $messageEntity;
-        $this->apps = $apps;
-        $this->app = $apps->get();
+        $this->apps = $appPool;
+        $this->app = $appPool->get();
     }
 
     /**

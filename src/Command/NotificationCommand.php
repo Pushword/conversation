@@ -17,9 +17,9 @@ class NotificationCommand extends Command
     protected \Pushword\Conversation\Service\NewMessageMailNotifier $notifier;
 
     public function __construct(
-        NewMessageMailNotifier $notifier
+        NewMessageMailNotifier $newMessageMailNotifier
     ) {
-        $this->notifier = $notifier;
+        $this->notifier = $newMessageMailNotifier;
         parent::__construct();
     }
 

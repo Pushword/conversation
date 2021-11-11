@@ -42,13 +42,13 @@ class NewMessageMailNotifier
     public function __construct(
         $message,
         MailerInterface $mailer,
-        AppPool $apps,
+        AppPool $appPool,
         $projectDir,
         EntityManagerInterface $entityManager,
         TranslatorInterface $translator
     ) {
         $this->mailer = $mailer;
-        $this->apps = $apps;
+        $this->apps = $appPool;
         $this->emailTo = $this->apps->get()->get('conversation_notification_email_to');
         $this->emailFrom = $this->apps->get()->get('conversation_notification_email_from');
         $this->interval = $this->apps->get()->get('conversation_notification_interval');
@@ -86,7 +86,7 @@ class NewMessageMailNotifier
             return;
         }
 
-        $message = (new TemplatedEmail())
+        $templatedEmail = (new TemplatedEmail())
             ->subject(
                 $this->translator->trans(
                     'admin.conversation.notification.title.'.(\count($messages) > 1 ? 'plural' : 'singular'),
@@ -102,7 +102,7 @@ class NewMessageMailNotifier
             ]);
 
         $lastTime->set();
-        $this->mailer->send($message);
+        $this->mailer->send($templatedEmail);
 
         return true;
     }

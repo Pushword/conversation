@@ -20,16 +20,16 @@ class MessageForm
         }
         /**/
 
-        $form = $this->initForm();
+        $formBuilder = $this->initForm();
 
         if (! $this->getUser()) { // ! isset($user) ||
-            $form->add('authorEmail', EmailType::class, ['constraints' => $this->getAuthorEmailConstraints()]);
-            $form->add('authorName', null, ['constraints' => $this->getAuthorNameConstraints()]);
+            $formBuilder->add('authorEmail', EmailType::class, ['constraints' => $this->getAuthorEmailConstraints()]);
+            $formBuilder->add('authorName', null, ['constraints' => $this->getAuthorNameConstraints()]);
         }
 
-        $form->add('content', TextareaType::class);
+        $formBuilder->add('content', TextareaType::class);
 
-        return $form;
+        return $formBuilder;
     }
 
     protected function getUser()

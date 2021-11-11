@@ -38,8 +38,8 @@ final class ConversationFormController extends AbstractController
 
     public function __construct(
         TranslatorInterface $translator,
-        AppPool $apps,
-        ParameterBagInterface $params,
+        AppPool $appPool,
+        ParameterBagInterface $parameterBag,
         Twig $twig,
         FormFactoryInterface $formFactory,
         TokenStorageInterface $tokenStorage,
@@ -47,8 +47,8 @@ final class ConversationFormController extends AbstractController
         string $env
     ) {
         $this->translator = $translator;
-        $this->params = $params;
-        $this->apps = $apps;
+        $this->params = $parameterBag;
+        $this->apps = $appPool;
         $this->env = $env;
         $this->twig = $twig;
         $this->formFactory = $formFactory;

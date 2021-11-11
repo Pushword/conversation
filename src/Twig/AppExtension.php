@@ -23,11 +23,11 @@ class AppExtension extends AbstractExtension
 
     private \Symfony\Component\Routing\RouterInterface $router;
 
-    public function __construct(EntityManagerInterface $em, string $messageEntity, AppPool $apps, RouterInterface $router)
+    public function __construct(EntityManagerInterface $entityManager, string $messageEntity, AppPool $appPool, RouterInterface $router)
     {
-        $this->em = $em;
-        $this->apps = $apps;
-        $this->app = $apps->get();
+        $this->em = $entityManager;
+        $this->apps = $appPool;
+        $this->app = $appPool->get();
         $this->messageEntity = $messageEntity;
         $this->router = $router;
     }
@@ -55,7 +55,7 @@ class AppExtension extends AbstractExtension
     }
 
     public function showConversation(
-        Twig $env,
+        Twig $twig,
         string $referring,
         string $orderBy = 'createdAt ASC',
         $limit = 0,
@@ -68,6 +68,6 @@ class AppExtension extends AbstractExtension
 
         $view = $this->app->getView($view, '@PushwordConversation');
 
-        return $env->render($view, ['messages' => $messages]);
+        return $twig->render($view, ['messages' => $messages]);
     }
 }

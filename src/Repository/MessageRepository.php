@@ -17,15 +17,15 @@ class MessageRepository extends ServiceEntityRepository
     {
         $orderBy = explode(' ', $orderBy);
 
-        $q = $this->createQueryBuilder('m')
+        $queryBuilder = $this->createQueryBuilder('m')
             ->andWhere('m.publishedAt is NOT NULL')
             ->andWhere('m.referring =  :referring')
             ->setParameter('referring', $referring)
             ->orderBy('m.'.$orderBy[0], $orderBy[1]);
         if ($limit) {
-            $q->setMaxResults($limit);
+            $queryBuilder->setMaxResults($limit);
         }
 
-        return $q->getQuery()->getResult();
+        return $queryBuilder->getQuery()->getResult();
     }
 }
