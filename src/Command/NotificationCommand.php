@@ -12,6 +12,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class NotificationCommand extends Command
 {
+    protected static $defaultName = 'pushword:conversation:notify';
+
     protected \Pushword\Conversation\Service\NewMessageMailNotifier $notifier;
 
     public function __construct(
@@ -23,9 +25,7 @@ class NotificationCommand extends Command
 
     protected function configure()
     {
-        $this
-            ->setName('pushword:conversation:notify')
-            ->setDescription('Send a mail (notification) with the latests messages stored (this comand is useful to program a cron).')
+        $this->setDescription('Send a mail (notification) with the latests messages stored (this comand is useful to program a cron).')
         ;
     }
 
