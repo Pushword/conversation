@@ -77,7 +77,7 @@ class NewMessageMailNotifier
         }
 
         $lastTime = new LastTime($this->projectDir.'/var/lastNewMessageNotification');
-        if (false === $lastTime->wasRunSince(new DateInterval($this->interval))) {
+        if (! $lastTime->wasRunSince(new DateInterval($this->interval))) {
             return;
         }
 

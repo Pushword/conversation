@@ -35,15 +35,19 @@ class AppExtension extends AbstractExtension
     public function getFunctions()
     {
         return [
-            new TwigFunction('showConversation', [$this, 'showConversation'], ['is_safe' => ['html'], 'needs_environment' => true]),
-            new TwigFunction('conversation', [$this, 'getConversationRoute']),
+            new TwigFunction('showConversation', function (Twig $twig, string $referring, string $orderBy, $limit, string $view) {
+                return $this->showConversation($twig, $referring, $orderBy, $limit, $view);
+            }, ['is_safe' => ['html'], 'needs_environment' => true]),
+            new TwigFunction('conversation', function ($type) {
+                return $this->getConversationRoute($type);
+            }),
         ];
     }
 
     public function getConversationRoute($type)
     {
         $page = $this->apps->getCurrentPage();
-        if (null === $page) {
+        if (! $page instanceof \Pushword\Core\Entity\PageInterface) {
             throw new Exception('A page must be defined...');
         }
 
