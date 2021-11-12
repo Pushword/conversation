@@ -56,7 +56,10 @@ final class ConversationFormController extends AbstractController
         $this->router = $router;
     }
 
-    private function getFormManagerClass($type)
+    /**
+     * @return class-string
+     */
+    private function getFormManagerClass(string $type)
     {
         $param = 'conversation_form_'.str_replace('-', '_', $type);
 
@@ -74,6 +77,8 @@ final class ConversationFormController extends AbstractController
 
     /**
      * Return current form manager depending on `type` (request).
+     *
+     * @return object
      */
     private function getFormManager(string $type, Request $request)
     {
@@ -96,6 +101,9 @@ final class ConversationFormController extends AbstractController
         );
     }
 
+    /**
+     * @return mixed[]
+     */
     private function getPossibleOrigins(Request $request): array
     {
         //$host = $request->getHost();
@@ -124,7 +132,7 @@ final class ConversationFormController extends AbstractController
         return $this->possibleOrigins;
     }
 
-    private function initResponse($request): Response
+    private function initResponse(Request $request): Response
     {
         $response = new Response();
 

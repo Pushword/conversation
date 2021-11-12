@@ -70,6 +70,9 @@ class NewMessageMailNotifier
         return $query->getResult();
     }
 
+    /**
+     * @return bool|void
+     */
     public function send()
     {
         if (! $this->emailTo) {

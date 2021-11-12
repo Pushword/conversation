@@ -32,13 +32,16 @@ class AppExtension extends AbstractExtension
         $this->router = $router;
     }
 
+    /**
+     * @return \Twig\TwigFunction[]
+     */
     public function getFunctions()
     {
         return [
-            new TwigFunction('showConversation', function (Twig $twig, string $referring, string $orderBy, $limit, string $view) {
+            new TwigFunction('showConversation', function (Twig $twig, string $referring, string $orderBy, $limit, string $view): string {
                 return $this->showConversation($twig, $referring, $orderBy, $limit, $view);
             }, ['is_safe' => ['html'], 'needs_environment' => true]),
-            new TwigFunction('conversation', function ($type) {
+            new TwigFunction('conversation', function ($type): string {
                 return $this->getConversationRoute($type);
             }),
         ];

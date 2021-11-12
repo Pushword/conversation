@@ -39,26 +39,19 @@ trait FormTrait
     /** @var string */
     protected $successMessage = 'conversation.send.success';
 
-    /** @var Request */
-    protected $request;
+    protected \Symfony\Component\HttpFoundation\Request $request;
 
-    /** @var \Doctrine\Bundle\DoctrineBundle\Registry */
-    protected $doctrine;
+    protected \Doctrine\Bundle\DoctrineBundle\Registry $doctrine;
 
-    /** @var Twig */
-    protected $twig;
+    protected Twig $twig;
 
-    /** @var TokenStorageInterface */
-    protected $security;
+    protected \Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface $security;
 
-    /** @var FormFactory */
-    protected $formFactory;
+    protected \Symfony\Component\Form\FormFactory $formFactory;
 
-    /** @var TranslatorInterface */
-    protected $translator;
+    protected \Symfony\Contracts\Translation\TranslatorInterface $translator;
 
-    /** @var Router */
-    protected $router;
+    protected \Symfony\Bundle\FrameworkBundle\Routing\Router $router;
 
     /** @var int */
     protected $currentStep;
@@ -66,14 +59,12 @@ trait FormTrait
     /** @var int */
     protected $messageId;
 
-    /** @var string */
-    protected $messageEntity;
+    protected string $messageEntity;
 
     /** @var Message */
     protected $message;
 
-    /** @var AppPool */
-    protected $apps;
+    protected \Pushword\Core\Component\App\AppPool $apps;
 
     /** @var AppConfig */
     protected $app;
@@ -228,6 +219,9 @@ trait FormTrait
         ]);
     }
 
+    /**
+     * @return bool|string
+     */
     protected function getNextStepFunctionName()
     {
         $getFormMethod = 'getStep'.self::$step[$this->getNextStep()];
@@ -238,6 +232,9 @@ trait FormTrait
         return $getFormMethod;
     }
 
+    /**
+     * @return float|int
+     */
     protected function getNextStep()
     {
         return $this->getStep() + 1;
@@ -250,6 +247,9 @@ trait FormTrait
         );
     }
 
+    /**
+     * @return mixed
+     */
     protected function getStep()
     {
         if (null !== $this->currentStep) {
@@ -265,6 +265,9 @@ trait FormTrait
         ++$this->currentStep;
     }
 
+    /**
+     * @return mixed
+     */
     protected function getId()
     {
         return $this->messageId ? $this->messageId : $this->request->query->getInt('id', 0);
@@ -280,11 +283,17 @@ trait FormTrait
         return $this->request->get('type');
     }
 
+    /**
+     * @return \Doctrine\Bundle\DoctrineBundle\Registry
+     */
     protected function getDoctrine()
     {
         return $this->doctrine;
     }
 
+    /**
+     * @return \Symfony\Component\Validator\Constraints\Length[]|\Symfony\Component\Validator\Constraints\NotBlank[]
+     */
     protected function getAuthorNameConstraints()
     {
         return [
@@ -296,6 +305,9 @@ trait FormTrait
         ];
     }
 
+    /**
+     * @return \Symfony\Component\Validator\Constraints\Email[]|\Symfony\Component\Validator\Constraints\NotBlank[]
+     */
     protected function getAuthorEmailConstraints()
     {
         return [

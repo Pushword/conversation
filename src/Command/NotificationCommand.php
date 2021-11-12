@@ -23,12 +23,15 @@ class NotificationCommand extends Command
         parent::__construct();
     }
 
-    protected function configure()
+    protected function configure(): void
     {
         $this->setDescription('Send a mail (notification) with the latests messages stored (this comand is useful to program a cron).')
         ;
     }
 
+    /**
+     * @return int
+     */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         if (true === $this->notifier->send()) {

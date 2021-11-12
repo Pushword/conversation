@@ -89,10 +89,8 @@ class Message
 
     /**
      * Get message content.
-     *
-     * @return string|null
      */
-    public function getContent()
+    public function getContent(): ?string
     {
         return $this->content;
     }
@@ -102,7 +100,7 @@ class Message
      *
      * @return ?string
      */
-    public function getAuthorName()
+    public function getAuthorName(): ?string
     {
         return $this->authorName;
     }
@@ -124,7 +122,7 @@ class Message
      *
      * @return ?string
      */
-    public function getAuthorEmail()
+    public function getAuthorEmail(): ?string
     {
         return $this->authorEmail;
     }
@@ -146,7 +144,7 @@ class Message
      *
      * @return ?string
      */
-    public function getReferring()
+    public function getReferring(): ?string
     {
         return $this->referring;
     }
@@ -167,10 +165,8 @@ class Message
 
     /**
      * Get the value of authorIp.
-     *
-     * @return int|null
      */
-    public function getAuthorIp()
+    public function getAuthorIp(): ?int
     {
         return $this->authorIp;
     }
@@ -194,6 +190,9 @@ class Message
         return $this->setAuthorIp(ip2long(IPUtils::anonymize($authorIp)));
     }
 
+    /**
+     * @return bool|string
+     */
     public function getAuthorIpRaw()
     {
         return long2ip($this->getAuthorIp());
