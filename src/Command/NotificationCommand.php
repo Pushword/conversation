@@ -12,6 +12,9 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class NotificationCommand extends Command
 {
+    /**
+     * @var string
+     */
     protected static $defaultName = 'pushword:conversation:notify';
 
     protected \Pushword\Conversation\Service\NewMessageMailNotifier $notifier;
