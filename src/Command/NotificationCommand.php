@@ -29,10 +29,7 @@ class NotificationCommand extends Command
         ;
     }
 
-    /**
-     * @return int
-     */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         if (true === $this->notifier->send()) {
             $output->writeln('Notification sent with success.');

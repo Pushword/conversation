@@ -107,10 +107,8 @@ class Message
 
     /**
      * Set the value of authorName.
-     *
-     * @return self
      */
-    public function setAuthorName(?string $authorName)
+    public function setAuthorName(?string $authorName): self
     {
         $this->authorName = $authorName;
 
@@ -129,10 +127,8 @@ class Message
 
     /**
      * Set the value of authorEmail.
-     *
-     * @return self
      */
-    public function setAuthorEmail(?string $authorEmail)
+    public function setAuthorEmail(?string $authorEmail): self
     {
         $this->authorEmail = $authorEmail;
 
@@ -153,10 +149,8 @@ class Message
      * Set identifier referring.
      *
      * @param string $from Identifier referring
-     *
-     * @return self
      */
-    public function setReferring(string $referring)
+    public function setReferring(string $referring): self
     {
         $this->referring = $referring;
 
@@ -173,10 +167,8 @@ class Message
 
     /**
      * Set the value of authorIp.
-     *
-     * @return self
      */
-    public function setAuthorIp(?int $authorIp)
+    public function setAuthorIp(?int $authorIp): self
     {
         if (null !== $authorIp) {
             $this->authorIp = $authorIp;

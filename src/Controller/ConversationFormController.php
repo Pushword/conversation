@@ -77,10 +77,8 @@ final class ConversationFormController extends AbstractController
 
     /**
      * Return current form manager depending on `type` (request).
-     *
-     * @return object
      */
-    private function getFormManager(string $type, Request $request)
+    private function getFormManager(string $type, Request $request): object
     {
         if (null !== $this->form) {
             return $this->form;

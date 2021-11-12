@@ -12,10 +12,7 @@ class PushwordConversationExtension extends ConfigurableExtension implements Pre
 
     private $configFolder = __DIR__.'/../Resources/config';
 
-    /**
-     * @return string
-     */
-    public function getAlias()
+    public function getAlias(): string
     {
         return 'conversation';
     }

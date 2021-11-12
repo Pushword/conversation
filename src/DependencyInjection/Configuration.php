@@ -25,10 +25,7 @@ class Configuration implements ConfigurationInterface
         'possible_origins',
     ];
 
-    /**
-     * @return \Symfony\Component\Config\Definition\Builder\TreeBuilder
-     */
-    public function getConfigTreeBuilder()
+    public function getConfigTreeBuilder(): TreeBuilder
     {
         $treeBuilder = new TreeBuilder('conversation');
         $treeBuilder
