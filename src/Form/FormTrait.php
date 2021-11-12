@@ -117,6 +117,7 @@ trait FormTrait
             if (! $this->message) {
                 throw new NotFoundHttpException('An error occured during the validation ('.$this->getId().')');
             }
+
             // add a security check ? Comparing current IP and previous one
             // IPUtils::checkIp($request->getClientIp()), $this->message->getAuthorIpRaw())
             // sinon, passer l'id dans la session plutôt que dans la requête
@@ -180,6 +181,7 @@ trait FormTrait
                     'step' => $this->getStep() + 1,
                 ]);*/
             }
+
             //$form = $form->createView();
 
             return $this->showSuccess();
