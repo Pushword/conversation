@@ -44,7 +44,7 @@ class AppExtension extends AbstractExtension
         ];
     }
 
-    public function getConversationRoute($type)
+    public function getConversationRoute($type): string
     {
         $page = $this->apps->getCurrentPage();
         if (! $page instanceof \Pushword\Core\Entity\PageInterface) {
@@ -64,7 +64,7 @@ class AppExtension extends AbstractExtension
         string $orderBy = 'createdAt ASC',
         $limit = 0,
         string $view = '/conversation/messages_list.html.twig'
-    ) {
+    ): string {
         /** @var MessageRepository $msgRepo */
         $msgRepo = $this->em->getRepository($this->messageEntity);
 

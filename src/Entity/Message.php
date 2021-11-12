@@ -189,7 +189,7 @@ class Message
         return $this;
     }
 
-    public function setAuthorIpRaw(string $authorIp)
+    public function setAuthorIpRaw(string $authorIp): self
     {
         return $this->setAuthorIp(ip2long(IPUtils::anonymize($authorIp)));
     }

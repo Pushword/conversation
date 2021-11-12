@@ -35,7 +35,7 @@ class NewMessageMailNotifier
     private string $host;
 
     /**
-     * Undocumented function.
+     .
      *
      * @param string $message Entity
      */
