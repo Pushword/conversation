@@ -13,7 +13,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 class NotificationCommand extends Command
 {
     /**
-     * @var string
+     * @var string|null
      */
     protected static $defaultName = 'pushword:conversation:notify';
 

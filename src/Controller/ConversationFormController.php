@@ -107,7 +107,7 @@ final class ConversationFormController extends AbstractController
         //$host = $request->getHost();
         $app = $this->apps->get();
 
-        if (! empty($this->possibleOrigins)) {
+        if ([] !== $this->possibleOrigins) {
             return $this->possibleOrigins;
         }
 
