@@ -53,7 +53,7 @@ class ConversationAdmin extends AbstractAdmin
                 'required' => false,
                 'label' => 'admin.conversation.authorIp.label',
                 'attr' => [
-                    ($this->getSubject() ? ($this->getSubject()->getAuthorIp() ? 'disabled' : 't') : 't') => '',
+                    (0 !== (int) $this->getSubject()->getAuthorIp() ? 'disabled' : 't') => '',
                 ],
             ])
             ->end();

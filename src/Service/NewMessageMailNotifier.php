@@ -3,7 +3,10 @@
 namespace Pushword\Conversation\Service;
 
 use DateInterval;
+use DateTimeInterface;
 use Doctrine\ORM\EntityManagerInterface;
+use LogicException;
+use Pushword\Conversation\Entity\MessageInterface;
 use Pushword\Core\Component\App\AppPool;
 use Pushword\Core\Utils\LastTime;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
@@ -20,16 +23,19 @@ class NewMessageMailNotifier
 
     private \Symfony\Contracts\Translation\TranslatorInterface $translator;
 
-    private $emailTo;
+    private string $emailTo;
 
-    private $emailFrom;
+    private string $emailFrom;
 
-    private $appName;
+    private string $appName;
 
-    private $projectDir;
+    private string $projectDir;
 
-    private $interval;
+    private string $interval;
 
+    /**
+     * @var class-string<MessageInterface>
+     */
     private string $message;
 
     private string $host;
@@ -37,22 +43,22 @@ class NewMessageMailNotifier
     /**
      .
      *
-     * @param string $message Entity
+     * @param class-string<MessageInterface> $message Entity
      */
     public function __construct(
-        $message,
+        string $message,
         MailerInterface $mailer,
         AppPool $appPool,
-        $projectDir,
+        string $projectDir,
         EntityManagerInterface $entityManager,
         TranslatorInterface $translator
     ) {
         $this->mailer = $mailer;
         $this->apps = $appPool;
-        $this->emailTo = $this->apps->get()->get('conversation_notification_email_to');
-        $this->emailFrom = $this->apps->get()->get('conversation_notification_email_from');
-        $this->interval = $this->apps->get()->get('conversation_notification_interval');
-        $this->appName = $this->apps->get()->get('name');
+        $this->emailTo = \strval($this->apps->get()->get('conversation_notification_email_to'));
+        $this->emailFrom = \strval($this->apps->get()->get('conversation_notification_email_from'));
+        $this->interval = \strval($this->apps->get()->get('conversation_notification_interval'));
+        $this->appName = \strval($this->apps->get()->get('name'));
         $this->host = $this->apps->get()->getMainHost();
         $this->projectDir = $projectDir;
         $this->em = $entityManager;
@@ -60,14 +66,17 @@ class NewMessageMailNotifier
         $this->message = $message;
     }
 
-    protected function getMessagesPostedSince($datetime)
+    /**
+     * @return MessageInterface[]
+     */
+    protected function getMessagesPostedSince(DateTimeInterface $datetime)
     {
         $query = 'SELECT m FROM '.$this->message.' m WHERE m.host = :host AND m.createdAt > :lastNotificationTime';
         $query = $this->em->createQuery($query)
-            ->setParameter('lastNotificationTime', $datetime)
+            ->setParameter('lastNotificationTime', $datetime, 'datetime')
             ->setParameter('host', $this->host);
 
-        return $query->getResult();
+        return $query->getResult(); // @phpstan-ignore-line
     }
 
     /**
@@ -75,7 +84,7 @@ class NewMessageMailNotifier
      */
     public function send()
     {
-        if (! $this->emailTo) {
+        if ('' === $this->emailTo) {
             return;
         }
 
@@ -84,8 +93,12 @@ class NewMessageMailNotifier
             return;
         }
 
-        $messages = $this->getMessagesPostedSince($lastTime->get('15 minutes ago'));
-        if (empty($messages)) {
+        if (($since = $lastTime->get($this->interval)) === null) {
+            throw new LogicException();
+        }
+
+        $messages = $this->getMessagesPostedSince($since);
+        if ([] === $messages) {
             return;
         }
 

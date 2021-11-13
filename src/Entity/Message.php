@@ -14,7 +14,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 /**
  * @ORM\Entity(repositoryClass=MessageRepository::class)
  */
-class Message
+class Message implements MessageInterface
 {
     use HostTrait;
     use IdTrait;
@@ -52,7 +52,7 @@ class Message
      *
      * @ORM\Column(type="string", length=180)
      */
-    protected ?string $referring = null;
+    protected string $referring = '';
 
     /**
      * @ORM\Column(type="datetime", nullable=true)
@@ -137,18 +137,14 @@ class Message
 
     /**
      * Get identifier referring.
-     *
-     * @return ?string
      */
-    public function getReferring(): ?string
+    public function getReferring(): string
     {
         return $this->referring;
     }
 
     /**
      * Set identifier referring.
-     *
-     * @param string $from Identifier referring
      */
     public function setReferring(string $referring): self
     {
@@ -179,7 +175,7 @@ class Message
 
     public function setAuthorIpRaw(string $authorIp): self
     {
-        return $this->setAuthorIp(ip2long(IPUtils::anonymize($authorIp)));
+        return $this->setAuthorIp((int) ip2long(IPUtils::anonymize($authorIp)));
     }
 
     /**
@@ -187,7 +183,7 @@ class Message
      */
     public function getAuthorIpRaw()
     {
-        return long2ip($this->getAuthorIp());
+        return long2ip((int) $this->getAuthorIp());
     }
 
     public function __toString()

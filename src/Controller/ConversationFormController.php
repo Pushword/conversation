@@ -3,7 +3,9 @@
 namespace Pushword\Conversation\Controller;
 
 use ErrorException;
+use Pushword\Conversation\Form\ConversationFormInterface;
 use Pushword\Core\Component\App\AppPool;
+use ReflectionClass;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\Form\FormFactoryInterface;
@@ -18,8 +20,11 @@ final class ConversationFormController extends AbstractController
 {
     private TranslatorInterface $translator;
 
-    private ?object $form = null;
+    private ?ConversationFormInterface $form = null;
 
+    /**
+     * @var string[]
+     */
     private array $possibleOrigins = [];
 
     private ParameterBagInterface $params;
@@ -57,7 +62,7 @@ final class ConversationFormController extends AbstractController
     }
 
     /**
-     * @return class-string
+     * @return class-string<ConversationFormInterface>
      */
     private function getFormManagerClass(string $type)
     {
@@ -67,18 +72,19 @@ final class ConversationFormController extends AbstractController
             throw new \Exception('`'.$type.'` does\'nt exist (not configured).');
         }
 
-        $class = $this->apps->get()->get($param);
-        if (! class_exists($class)) {
+        $class = \strval($this->apps->get()->get($param));
+        if (! class_exists($class)
+            || ! (new ReflectionClass($class))->implementsInterface(ConversationFormInterface::class)) {
             throw new \Exception('`'.$type.'` does\'nt exist.');
         }
 
-        return $class;
+        return $class; // @phpstan-ignore-line
     }
 
     /**
      * Return current form manager depending on `type` (request).
      */
-    private function getFormManager(string $type, Request $request): object
+    private function getFormManager(string $type, Request $request): ConversationFormInterface
     {
         if (null !== $this->form) {
             return $this->form;
@@ -111,7 +117,7 @@ final class ConversationFormController extends AbstractController
             return $this->possibleOrigins;
         }
 
-        if ($app->get('conversation_possible_origins')) {
+        if (\is_string($app->get('conversation_possible_origins'))) {
             $this->possibleOrigins = explode(' ', $app->get('conversation_possible_origins'));
         }
 
@@ -134,7 +140,7 @@ final class ConversationFormController extends AbstractController
     {
         $response = new Response();
 
-        if (! \in_array($request->headers->get('origin'), $this->getPossibleOrigins($request))) {
+        if (! \in_array($request->headers->get('origin'), $this->getPossibleOrigins($request), true)) {
             throw new ErrorException('origin sent is not authorized'.' ('.$request->headers->get('origin').') '.\Safe\json_encode($this->getPossibleOrigins($request)).'.');
         }
 
@@ -149,7 +155,9 @@ final class ConversationFormController extends AbstractController
     public function show(Request $request, string $type, ?string $host = null): Response
     {
         //$host = $host ?? $request->getHost();
-        $this->apps->switchCurrentApp($host);
+        if (null !== $host) {
+            $this->apps->switchCurrentApp($host);
+        }
 
         $response = $this->initResponse($request);
 

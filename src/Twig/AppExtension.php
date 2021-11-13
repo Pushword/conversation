@@ -4,6 +4,7 @@ namespace Pushword\Conversation\Twig;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Exception;
+use Pushword\Conversation\Entity\MessageInterface;
 use Pushword\Conversation\Repository\MessageRepository;
 use Pushword\Core\Component\App\AppPool;
 use Symfony\Component\Routing\RouterInterface;
@@ -19,10 +20,16 @@ class AppExtension extends AbstractExtension
 
     private \Pushword\Core\Component\App\AppPool $apps;
 
+    /**
+     * @var class-string<MessageInterface>
+     */
     private string $messageEntity;
 
     private \Symfony\Component\Routing\RouterInterface $router;
 
+    /**
+     * @param class-string<MessageInterface> $messageEntity
+     */
     public function __construct(EntityManagerInterface $entityManager, string $messageEntity, AppPool $appPool, RouterInterface $router)
     {
         $this->em = $entityManager;
@@ -47,7 +54,7 @@ class AppExtension extends AbstractExtension
         ];
     }
 
-    public function getConversationRoute($type): string
+    public function getConversationRoute(string $type): string
     {
         $page = $this->apps->getCurrentPage();
         if (! $page instanceof \Pushword\Core\Entity\PageInterface) {
@@ -65,7 +72,7 @@ class AppExtension extends AbstractExtension
         Twig $twig,
         string $referring,
         string $orderBy = 'createdAt ASC',
-        $limit = 0,
+        int $limit = 0,
         string $view = '/conversation/messages_list.html.twig'
     ): string {
         /** @var MessageRepository $msgRepo */

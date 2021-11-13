@@ -2,11 +2,13 @@
 
 namespace Pushword\Conversation\Form;
 
+use LogicException;
+use Pushword\Core\Entity\UserInterface;
 use Symfony\Component\Form\Extension\Core\Type\EmailType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\FormBuilderInterface;
 
-class MessageForm
+class MessageForm implements ConversationFormInterface
 {
     use FormTrait;
 
@@ -22,7 +24,7 @@ class MessageForm
 
         $formBuilder = $this->initForm();
 
-        if (! $this->getUser()) { // ! isset($user) ||
+        if (null === $this->getUser()) { // ! isset($user) ||
             $formBuilder->add('authorEmail', EmailType::class, ['constraints' => $this->getAuthorEmailConstraints()]);
             $formBuilder->add('authorName', null, ['constraints' => $this->getAuthorNameConstraints()]);
         }
@@ -32,7 +34,7 @@ class MessageForm
         return $formBuilder;
     }
 
-    protected function getUser()
+    protected function getUser(): ?UserInterface
     {
         if (null === $token = $this->security->getToken()) {
             return null;
@@ -41,6 +43,10 @@ class MessageForm
         if (! \is_object($user = $token->getUser())) {
             // e.g. anonymous authentication
             return null;
+        }
+
+        if (! $user instanceof UserInterface) {
+            throw new LogicException();
         }
 
         return $user;
