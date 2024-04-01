@@ -7,7 +7,7 @@
 
     <p>
         {% if (message.authorEmail) %}Envoyé par &lt;{{ message.authorEmail }} {{ message.authorName }}&gt;<br>{% endif %}
-        <a href="{{ url('admin_pushword_conversation_message_edit', {id: message.id}) }}">Editer</a>
+        <a href="{{ url('admin_conversation_message_edit', {id: message.id}) }}">Editer</a>
     </p>
 </div>
 {% endfor %}
