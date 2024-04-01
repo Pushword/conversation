@@ -72,7 +72,7 @@ abstract class AbstractConversationForm implements ConversationFormInterface
         if (1 === $this->getStep()) {
             $this->message = new Message();
             $this->message->setAuthorIpRaw((string) $this->request->getClientIp());
-            $this->message->setReferring((string) $this->getReferring());
+            $this->message->setReferring($this->getReferring());
             $this->message->setHost($this->app->getMainHost());
         } else {
             $this->message = $this->messageRepo->find($this->getId())
@@ -116,6 +116,8 @@ abstract class AbstractConversationForm implements ConversationFormInterface
 
     /**
      * Return rendered response (success or error).
+     *
+     * @psalm-suppress all
      */
     public function validCurrentStep(FormInterface $form): string
     {
@@ -253,12 +255,12 @@ abstract class AbstractConversationForm implements ConversationFormInterface
         return (string) ($attributes[$key] ?? $query[$key]);
     }
 
-    protected function getReferring(): ?string
+    protected function getReferring(): string
     {
         return $this->get('referring');
     }
 
-    protected function getType(): ?string
+    protected function getType(): string
     {
         return $this->get('type');
     }

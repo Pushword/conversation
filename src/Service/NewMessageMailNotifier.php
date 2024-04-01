@@ -57,7 +57,10 @@ class NewMessageMailNotifier
             ->setParameter('lastNotificationTime', $datetime, 'datetime')
             ->setParameter('host', $this->host);
 
-        return $query->getResult(); // @phpstan-ignore-line
+        /** @var Message[] */
+        $result = $query->getResult();
+
+        return $result;
     }
 
     public function postUpdate(Message $message): void
@@ -98,7 +101,7 @@ class NewMessageMailNotifier
             ->text(
                 htmlspecialchars_decode($message->getContent())
                 ."\n\n---\n"
-                .'Envoyé par '.$message->getAuthorName()
+                .'Envoyé par '.($message->getAuthorName() ?? '')
                 ."\n".'Depuis '.$message->getHost().' › form['.$message->getReferring().']'
             );
 

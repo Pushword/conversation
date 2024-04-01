@@ -41,9 +41,6 @@ final class ConversationFormController extends AbstractController
     }
 
     /**
-     * @psalm-suppress MoreSpecificReturnType
-     * @psalm-suppress LessSpecificReturnStatement
-     *
      * @return class-string<ConversationFormInterface>
      */
     private function getFormManagerClass(string $type): string
