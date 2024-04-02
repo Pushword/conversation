@@ -3,17 +3,18 @@
 namespace Pushword\Conversation\Tests\Controller;
 
 use Pushword\Conversation\Controller\ConversationFormController;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Panther\PantherTestCase;
 
 class ConversationFormControllerTest extends PantherTestCase
 {
-    public function testMessageForm()
+    public function testMessageForm(): void
     {
         $client = static::createClient();
 
         $server = ['HTTP_ORIGIN' => 'https://localhost.dev'];
         $crawler = $client->request('POST', '/conversation/message/test', [], [], $server);
-        $this->assertEquals(200, $client->getResponse()->getStatusCode());
+        self::assertSame(Response::HTTP_OK, $client->getResponse()->getStatusCode(), (string) $client->getResponse()->getContent());
 
         $form = $crawler->filter('[name="form"]')->form([
             'form[content]' => 'Ceci est un message de test',
@@ -21,22 +22,11 @@ class ConversationFormControllerTest extends PantherTestCase
         $client->catchExceptions(false);
         $client->submit($form, [], $server);
 
-        $this->assertEquals(200, $client->getResponse()->getStatusCode());
+        self::assertSame(Response::HTTP_OK, $client->getResponse()->getStatusCode(), (string) $client->getResponse()->getContent());
     }
 
-    /**
-     * @return ConversationFormController
-     */
-    public function getController()
+    public function getController(): ConversationFormController
     {
-        return $this->getService(ConversationFormController::class);
-    }
-
-    public function getService(string $service)
-    {
-        self::bootKernel();
-        $container = static::getContainer();
-
-        return $container->get($service);
+        return static::getContainer()->get(ConversationFormController::class);
     }
 }

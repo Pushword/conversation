@@ -2,17 +2,20 @@
 
 namespace Pushword\Conversation\Entity;
 
+use DateTime;
+use DateTimeInterface;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Pushword\Conversation\Repository\MessageRepository;
 use Pushword\Core\Entity\SharedTrait\HostTrait;
 use Pushword\Core\Entity\SharedTrait\IdTrait;
 use Pushword\Core\Entity\SharedTrait\TimestampableTrait;
+use Stringable;
 use Symfony\Component\HttpFoundation\IpUtils;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: MessageRepository::class)]
-class Message implements \Stringable
+class Message implements Stringable
 {
     use HostTrait;
     use IdTrait;
@@ -39,20 +42,20 @@ class Message implements \Stringable
     protected string $referring = '';
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
-    protected ?\DateTimeInterface $publishedAt = null;
+    protected ?DateTimeInterface $publishedAt = null;
 
     public function __construct()
     {
-        $this->updatedAt ??= new \DateTime();
-        $this->createdAt ??= new \DateTime();
+        $this->updatedAt ??= new DateTime();
+        $this->createdAt ??= new DateTime();
     }
 
-    public function getPublishedAt(): ?\DateTimeInterface
+    public function getPublishedAt(): ?DateTimeInterface
     {
         return $this->publishedAt;
     }
 
-    public function setPublishedAt(?\DateTimeInterface $publishedAt): self
+    public function setPublishedAt(?DateTimeInterface $publishedAt): self
     {
         $this->publishedAt = $publishedAt;
 
@@ -163,6 +166,6 @@ class Message implements \Stringable
 
     public function __toString(): string
     {
-        return $this->id.' ';
+        return ($this->id ?? '0').' ';
     }
 }
