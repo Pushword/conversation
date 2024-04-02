@@ -3,16 +3,13 @@
 namespace Pushword\Conversation\Controller;
 
 use Doctrine\Persistence\ManagerRegistry;
-use ErrorException;
-use Exception;
 use Pushword\Conversation\Form\ConversationFormInterface;
-use Pushword\Conversation\Repository\MessageRepository;
 use Pushword\Core\Component\App\AppPool;
-use ReflectionClass;
 
 use function Safe\json_encode;
 
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -33,17 +30,19 @@ final class ConversationFormController extends AbstractController
     public function __construct(
         private readonly TranslatorInterface $translator,
         private readonly AppPool $apps,
+        private readonly ParameterBagInterface $params,
         private readonly Twig $twig,
         private readonly FormFactoryInterface $formFactory,
         private readonly TokenStorageInterface $tokenStorage,
         private readonly RouterInterface $router,
         private readonly ManagerRegistry $doctrine,
-        private readonly string $env,
-        private readonly MessageRepository $messageRepo,
+        private readonly string $env
     ) {
     }
 
     /**
+     * @noRector
+     *
      * @return class-string<ConversationFormInterface>
      */
     private function getFormManagerClass(string $type): string
@@ -51,19 +50,16 @@ final class ConversationFormController extends AbstractController
         $param = 'conversation_form_'.str_replace('-', '_', $type);
 
         if (! $this->apps->get()->has($param)) {
-            throw new Exception('`'.$type."` does'nt exist (not configured).");
+            throw new \Exception('`'.$type."` does'nt exist (not configured).");
         }
 
         $class = \strval($this->apps->get()->getStr($param));
-
         if (! class_exists($class)
-            || ! (new ReflectionClass($class))->implementsInterface(ConversationFormInterface::class)) {
-            throw new Exception('`'.$type."` does'nt exist.");
+            || ! (new \ReflectionClass($class))->implementsInterface(ConversationFormInterface::class)) {
+            throw new \Exception('`'.$type."` does'nt exist.");
         }
 
-        /** @var class-string<ConversationFormInterface> $class */
-
-        return $class;
+        return $class; // @phpstan-ignore-line
     }
 
     /**
@@ -78,6 +74,7 @@ final class ConversationFormController extends AbstractController
         $class = $this->getFormManagerClass($type);
 
         return $this->form = new $class(
+            $this->params->get('pw.conversation.entity_message'),
             $request,
             $this->doctrine,
             $this->tokenStorage,
@@ -85,8 +82,7 @@ final class ConversationFormController extends AbstractController
             $this->twig,
             $this->router,
             $this->translator,
-            $this->apps,
-            $this->messageRepo,
+            $this->apps
         );
     }
 
@@ -102,14 +98,11 @@ final class ConversationFormController extends AbstractController
             return $this->possibleOrigins;
         }
 
-        /** @var string[]|string */
-        $convertsationPossibleOrigins = $app->get('conversation_possible_origins');
-
-        if (\is_string($convertsationPossibleOrigins)) {
-            $this->possibleOrigins = explode(' ', $convertsationPossibleOrigins);
+        if (\is_string($app->get('conversation_possible_origins'))) {
+            $this->possibleOrigins = explode(' ', $app->get('conversation_possible_origins'));
         }
 
-        if ('dev' === $this->env) {
+        if ('dev' == $this->env) {
             $this->possibleOrigins[] = 'http://'.$request->getHost();
             $this->possibleOrigins[] = 'https://'.$request->getHost();
             $this->possibleOrigins[] = 'http://'.$request->getHost().':8000';
@@ -129,7 +122,7 @@ final class ConversationFormController extends AbstractController
         $response = new Response();
 
         if (! \in_array($request->headers->get('origin'), $this->getPossibleOrigins($request), true)) {
-            throw new ErrorException('origin sent is not authorized ('.($request->headers->get('origin') ?? '').') '.json_encode($this->getPossibleOrigins($request)).'.');
+            throw new \ErrorException('origin sent is not authorized ('.$request->headers->get('origin').') '.json_encode($this->getPossibleOrigins($request)).'.');
         }
 
         $response->headers->set('Access-Control-Allow-Credentials', 'true');

@@ -3,9 +3,7 @@
 namespace Pushword\Conversation\Form;
 
 use Doctrine\Bundle\DoctrineBundle\Registry;
-use Exception;
 use Pushword\Conversation\Entity\Message;
-use Pushword\Conversation\Repository\MessageRepository;
 use Pushword\Core\Component\App\AppConfig;
 use Pushword\Core\Component\App\AppPool;
 use Symfony\Bundle\FrameworkBundle\Routing\Router;
@@ -24,7 +22,7 @@ use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Contracts\Translation\TranslatorInterface;
 use Twig\Environment as Twig;
 
-abstract class AbstractConversationForm implements ConversationFormInterface
+trait FormTrait
 {
     /**
      * Permit to convert integer step to text string for a better readability.
@@ -41,27 +39,60 @@ abstract class AbstractConversationForm implements ConversationFormInterface
     /** @var string */
     protected $successMessage = 'conversation.send.success';
 
-    protected ?int $currentStep = null;
+    protected Request $request;
+
+    protected Registry $doctrine;
+
+    protected Twig $twig;
+
+    protected TokenStorageInterface $security;
+
+    protected FormFactory $formFactory;
+
+    protected TranslatorInterface $translator;
+
+    protected Router $router;
+
+    /** @var int */
+    protected $currentStep;
 
     protected ?int $messageId = null;
 
-    /** @psalm-suppress PropertyNotSetInConstructor */
+    /**
+     * @var class-string<Message>
+     */
+    protected string $messageEntity;
+
     protected Message $message;
+
+    protected AppPool $apps;
 
     protected AppConfig $app;
 
+    /**
+     * @param class-string<Message> $messageEntity
+     */
     public function __construct(
-        protected Request $request,
-        protected Registry $doctrine,
-        protected TokenStorageInterface $security,
-        protected FormFactory $formFactory,
-        protected Twig $twig,
-        protected Router $router,
-        protected TranslatorInterface $translator,
-        protected AppPool $apps,
-        protected MessageRepository $messageRepo,
+        string $messageEntity,
+        Request $request,
+        Registry $registry,
+        TokenStorageInterface $tokenStorage,
+        FormFactory $formFactory,
+        Twig $twig,
+        Router $router,
+        TranslatorInterface $translator,
+        AppPool $appPool
     ) {
-        $this->app = $this->apps->get();
+        $this->request = $request;
+        $this->doctrine = $registry;
+        $this->security = $tokenStorage;
+        $this->formFactory = $formFactory;
+        $this->twig = $twig;
+        $this->router = $router;
+        $this->translator = $translator;
+        $this->messageEntity = $messageEntity;
+        $this->apps = $appPool;
+        $this->app = $appPool->get();
     }
 
     /**
@@ -71,13 +102,15 @@ abstract class AbstractConversationForm implements ConversationFormInterface
     protected function initForm(): FormBuilderInterface
     {
         if (1 === $this->getStep()) {
-            $this->message = new Message();
+            $this->message = new $this->messageEntity(); // todo, permit to configure it
             $this->message->setAuthorIpRaw((string) $this->request->getClientIp());
-            $this->message->setReferring($this->getReferring());
+            $this->message->setReferring((string) $this->getReferring());
             $this->message->setHost($this->app->getMainHost());
         } else {
-            $this->message = $this->messageRepo->find($this->getId())
-                ?? throw new NotFoundHttpException('An error occured during the validation ('.$this->getId().')');
+            $this->message = $this->doctrine->getRepository($this->messageEntity)->find($this->getId()); // @phpstan-ignore-line ???
+            if (null === $this->message) {
+                throw new NotFoundHttpException('An error occured during the validation ('.$this->getId().')');
+            }
 
             // add a security check ? Comparing current IP and previous one
             // IPUtils::checkIp($request->getClientIp()), $this->message->getAuthorIpRaw())
@@ -100,25 +133,14 @@ abstract class AbstractConversationForm implements ConversationFormInterface
     {
         $currentStepMethod = 'getStep'.self::$step[$this->getStep()];
 
-        if (! method_exists($this, $currentStepMethod)) {
-            throw new Exception();
-        }
-
-        $currentStep = $this->$currentStepMethod(); // @phpstan-ignore-line
-
-        if (! $currentStep instanceof FormBuilderInterface) {
-            throw new Exception();
-        }
-
-        return $currentStep;
+        // @phpstan-ignore-next-line
+        return $this->$currentStepMethod();
     }
 
     abstract protected function getStepOne(): FormBuilderInterface;
 
     /**
      * Return rendered response (success or error).
-     *
-     * @psalm-suppress all
      */
     public function validCurrentStep(FormInterface $form): string
     {
@@ -235,9 +257,8 @@ abstract class AbstractConversationForm implements ConversationFormInterface
 
     protected function incrementStep(): void
     {
-        $currentStep = $this->getStep();
-
-        $this->currentStep = $currentStep + 1;
+        // $this->request->set('step', $this->getStep()+1)
+        ++$this->currentStep;
     }
 
     protected function getId(): int
@@ -250,23 +271,26 @@ abstract class AbstractConversationForm implements ConversationFormInterface
         $attributes = $this->request->attributes->all();
         $query = $this->request->query->all();
         if (! isset($attributes[$key]) && ! isset($query[$key])) {
-            throw new Exception($key.' not found');
+            throw new \Exception($key.' not found');
         }
 
         return (string) ($attributes[$key] ?? $query[$key]);
     }
 
-    protected function getReferring(): string
+    protected function getReferring(): ?string
     {
         return $this->get('referring');
     }
 
-    protected function getType(): string
+    protected function getType(): ?string
     {
         return $this->get('type');
     }
 
-    protected function getDoctrine(): Registry
+    /**
+     * @return Registry
+     */
+    protected function getDoctrine()
     {
         return $this->doctrine;
     }

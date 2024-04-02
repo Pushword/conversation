@@ -14,7 +14,8 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->bind('$env', '%kernel.environment%')
         ->bind('$message', '%pw.conversation.entity_message%')
         ->bind('$projectDir', '%kernel.project_dir%')
-    ;
+        ->bind('$messageEntity', '%pw.conversation.entity_message%')
+        ->bind('$entityClass', '%pw.conversation.entity_message%');
 
     $services->load('Pushword\Conversation\\', __DIR__.'/../../../src/*')
         ->exclude([

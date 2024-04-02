@@ -6,7 +6,7 @@ use Pushword\Admin\Tests\AbstractAdminTestClass;
 
 class ConversationAdminTest extends AbstractAdminTestClass
 {
-    public function testAdmin(): void
+    public function testAdmin()
     {
         $client = $this->loginUser();
 
@@ -16,7 +16,7 @@ class ConversationAdminTest extends AbstractAdminTestClass
 
         foreach ($actions as $action) {
             $client->request('GET', '/admin/conversation/'.$action);
-            self::assertResponseIsSuccessful();
+            $this->assertResponseIsSuccessful();
         }
     }
 }

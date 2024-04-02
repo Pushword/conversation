@@ -2,14 +2,15 @@
 
 namespace Pushword\Conversation\Form;
 
-use LogicException;
-use Pushword\Core\Entity\User;
+use Pushword\Core\Entity\UserInterface;
 use Symfony\Component\Form\Extension\Core\Type\EmailType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\FormBuilderInterface;
 
-class MessageForm extends AbstractConversationForm implements ConversationFormInterface
+class MessageForm implements ConversationFormInterface
 {
+    use FormTrait;
+
     protected function getStepOne(): FormBuilderInterface
     {
         /*
@@ -32,7 +33,7 @@ class MessageForm extends AbstractConversationForm implements ConversationFormIn
         return $formBuilder;
     }
 
-    protected function getUser(): ?User
+    protected function getUser(): ?UserInterface
     {
         if (null === $token = $this->security->getToken()) {
             return null;
@@ -43,8 +44,8 @@ class MessageForm extends AbstractConversationForm implements ConversationFormIn
             return null;
         }
 
-        if (! $user instanceof User) {
-            throw new LogicException();
+        if (! $user instanceof UserInterface) {
+            throw new \LogicException();
         }
 
         return $user;

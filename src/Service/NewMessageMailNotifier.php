@@ -2,10 +2,7 @@
 
 namespace Pushword\Conversation\Service;
 
-use DateInterval;
-use DateTimeInterface;
 use Doctrine\ORM\EntityManagerInterface;
-use Exception;
 use Psr\Log\LoggerInterface;
 use Pushword\Conversation\Entity\Message;
 use Pushword\Core\Component\App\AppPool;
@@ -53,17 +50,14 @@ class NewMessageMailNotifier
     /**
      * @return Message[]
      */
-    protected function getMessagesPostedSince(DateTimeInterface $datetime)
+    protected function getMessagesPostedSince(\DateTimeInterface $datetime)
     {
         $query = 'SELECT m FROM '.$this->message.' m WHERE m.authorEmail IS NULL AND m.host = :host AND m.createdAt > :lastNotificationTime';
         $query = $this->em->createQuery($query)
             ->setParameter('lastNotificationTime', $datetime, 'datetime')
             ->setParameter('host', $this->host);
 
-        /** @var Message[] */
-        $result = $query->getResult();
-
-        return $result;
+        return $query->getResult(); // @phpstan-ignore-line
     }
 
     public function postUpdate(Message $message): void
@@ -92,7 +86,7 @@ class NewMessageMailNotifier
 
     public function sendMessage(Message $message): void
     {
-        $authorEmail = $message->getAuthorEmail() ?? throw new Exception();
+        $authorEmail = $message->getAuthorEmail() ?? throw new \Exception();
 
         $templatedEmail = (new TemplatedEmail())
             ->subject(
@@ -104,7 +98,7 @@ class NewMessageMailNotifier
             ->text(
                 htmlspecialchars_decode($message->getContent())
                 ."\n\n---\n"
-                .'Envoyé par '.($message->getAuthorName() ?? '')
+                .'Envoyé par '.$message->getAuthorName()
                 ."\n".'Depuis '.$message->getHost().' › form['.$message->getReferring().']'
             );
 
@@ -120,7 +114,7 @@ class NewMessageMailNotifier
         }
 
         $lastTime = new LastTime($this->projectDir.'/var/lastNewMessageNotification');
-        if ($lastTime->wasRunSince(new DateInterval($this->interval))) {
+        if ($lastTime->wasRunSince(new \DateInterval($this->interval))) {
             $this->logger->info('Not sending conversation notification : a previous notification was send not a long time ago ('.$this->interval.', see `conversation_notification_interval`).');
 
             return;
