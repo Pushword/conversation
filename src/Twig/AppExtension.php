@@ -3,6 +3,7 @@
 namespace Pushword\Conversation\Twig;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Exception;
 use Pushword\Conversation\Entity\Message;
 use Pushword\Conversation\Repository\MessageRepository;
 use Pushword\Core\Component\App\AppConfig;
@@ -40,7 +41,7 @@ class AppExtension extends AbstractExtension
     {
         $page = $this->apps->getCurrentPage();
         if (! $page instanceof Page) {
-            throw new \Exception('A page must be defined...');
+            throw new Exception('A page must be defined...');
         }
 
         return $this->router->generate('pushword_conversation', [

@@ -3,9 +3,12 @@
 namespace Pushword\Conversation\Controller;
 
 use Doctrine\Persistence\ManagerRegistry;
+use ErrorException;
+use Exception;
 use Pushword\Conversation\Form\ConversationFormInterface;
 use Pushword\Conversation\Repository\MessageRepository;
 use Pushword\Core\Component\App\AppPool;
+use ReflectionClass;
 
 use function Safe\json_encode;
 
@@ -48,14 +51,14 @@ final class ConversationFormController extends AbstractController
         $param = 'conversation_form_'.str_replace('-', '_', $type);
 
         if (! $this->apps->get()->has($param)) {
-            throw new \Exception('`'.$type."` does'nt exist (not configured).");
+            throw new Exception('`'.$type."` does'nt exist (not configured).");
         }
 
         $class = \strval($this->apps->get()->getStr($param));
 
         if (! class_exists($class)
-            || ! (new \ReflectionClass($class))->implementsInterface(ConversationFormInterface::class)) {
-            throw new \Exception('`'.$type."` does'nt exist.");
+            || ! (new ReflectionClass($class))->implementsInterface(ConversationFormInterface::class)) {
+            throw new Exception('`'.$type."` does'nt exist.");
         }
 
         /** @var class-string<ConversationFormInterface> $class */
@@ -126,7 +129,7 @@ final class ConversationFormController extends AbstractController
         $response = new Response();
 
         if (! \in_array($request->headers->get('origin'), $this->getPossibleOrigins($request), true)) {
-            throw new \ErrorException('origin sent is not authorized ('.($request->headers->get('origin') ?? '').') '.json_encode($this->getPossibleOrigins($request)).'.');
+            throw new ErrorException('origin sent is not authorized ('.($request->headers->get('origin') ?? '').') '.json_encode($this->getPossibleOrigins($request)).'.');
         }
 
         $response->headers->set('Access-Control-Allow-Credentials', 'true');

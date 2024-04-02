@@ -3,6 +3,7 @@
 namespace Pushword\Conversation\Form;
 
 use Doctrine\Bundle\DoctrineBundle\Registry;
+use Exception;
 use Pushword\Conversation\Entity\Message;
 use Pushword\Conversation\Repository\MessageRepository;
 use Pushword\Core\Component\App\AppConfig;
@@ -100,13 +101,13 @@ abstract class AbstractConversationForm implements ConversationFormInterface
         $currentStepMethod = 'getStep'.self::$step[$this->getStep()];
 
         if (! method_exists($this, $currentStepMethod)) {
-            throw new \Exception();
+            throw new Exception();
         }
 
         $currentStep = $this->$currentStepMethod(); // @phpstan-ignore-line
 
         if (! $currentStep instanceof FormBuilderInterface) {
-            throw new \Exception();
+            throw new Exception();
         }
 
         return $currentStep;
@@ -249,7 +250,7 @@ abstract class AbstractConversationForm implements ConversationFormInterface
         $attributes = $this->request->attributes->all();
         $query = $this->request->query->all();
         if (! isset($attributes[$key]) && ! isset($query[$key])) {
-            throw new \Exception($key.' not found');
+            throw new Exception($key.' not found');
         }
 
         return (string) ($attributes[$key] ?? $query[$key]);
