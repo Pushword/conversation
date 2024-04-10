@@ -6,7 +6,6 @@
 
         {% block before %}        {% endblock %}
 
-
         {% block error %}
             {% if not conversation.vars.valid %}
             <div class="w-full mt-3 bg-red text-red">
@@ -22,7 +21,7 @@
                 {{ form_row(conversation.content, {
 
                 label_attr: {class: 'sr-only'},
-                row_attr: { class: ' '},
+                row_attr: {class: ' '},
                 attr: {
                     'placeholder': 'Message',
                     onfocus: "this.placeholder = ''",
@@ -43,11 +42,11 @@
                 <div class="md:w-3/4">
                     {{ form_row(conversation.authorName, {
                     label_attr: {class: 'sr-only'},
-                    row_attr: { class: ' '},
+                    row_attr: {class: ' '},
                     attr: {
                         'placeholder': 'conversation.name.placeholder'|trans,
                         onfocus: "this.placeholder = ''",
-                        onblur: "this.placeholder = '"~'conversation.name.placeholder'|trans~"'",
+                        onblur: "this.placeholder = '" ~ 'conversation.name.placeholder'|trans ~ "'",
                         required: "text",
                         type: "text",
                         class: 'bg-white border-2 border-gray-100 w-full py-2 px-4 text-gray-900 focus:outline-none focus:border-primary focus:ring-primary'
@@ -65,11 +64,11 @@
                 <div class="md:w-3/4">
                     {{ form_row(conversation.authorEmail, {
                     label_attr: {class: 'sr-only', style: 'display:none'},
-                    row_attr: { class: ' '},
+                    row_attr: {class: ' '},
                     attr: {
                         'placeholder': 'conversation.email.placeholder'|trans,
                         onfocus: "this.placeholder = ''",
-                        onblur: "this.placeholder = '"~'conversation.email.placeholder'|trans~"'",
+                        onblur: "this.placeholder = '" ~ 'conversation.email.placeholder'|trans ~ "'",
                         required: "text",
                         pattern: "[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{1,63}$",
                         type: "email",
@@ -92,7 +91,6 @@
             </div>
         </div>
         {% endblock %}
-
 
         {% block after %}        {% endblock %}
 
