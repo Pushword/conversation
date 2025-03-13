@@ -11,6 +11,5 @@ if (! PostInstall::isRoot()) {
 
 echo '~~ Adding Routes'.chr(10);
 PostInstall::addOnTop('config/routes.yaml', "conversation:\n    resource: '@PushwordConversationBundle/Resources/config/routes/conversation.yaml'\n");
-PostInstall::addOnTop('config/framework.yaml', "conversation:\n    resource: '@PushwordConversationBundle/Resources/config/routes/conversation.yaml'\n");
 
 exec('php bin/console doctrine:schema:update --force');
