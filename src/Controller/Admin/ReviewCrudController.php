@@ -11,12 +11,9 @@ use EasyCorp\Bundle\EasyAdminBundle\Dto\SearchDto;
 use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\CollectionField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\DateTimeField;
-use EasyCorp\Bundle\EasyAdminBundle\Field\IntegerField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 
 use function is_numeric;
-use function mb_strlen;
-use function mb_substr;
 
 use Override;
 use Pushword\Admin\Form\Type\MediaPickerType;
@@ -83,13 +80,6 @@ final class ReviewCrudController extends ConversationCrudController
         return $fields;
     }
 
-    private function getRatingDisplayField(): IntegerField
-    {
-        return IntegerField::new('rating', 'admin.review.rating.label')
-            ->setSortable(false)
-            ->formatValue(static fn (?int $value): string => self::formatRating($value ?? 0));
-    }
-
     private function getMediaPickerField(): CollectionField
     {
         $field = CollectionField::new('mediaList', 'admin.review.medias.label')
@@ -128,61 +118,10 @@ final class ReviewCrudController extends ConversationCrudController
 
         yield TextField::new('title', 'admin.review.title.label')
             ->setSortable(false)
-            ->formatValue(fn (?string $value, ?Review $review): string => $this->formatTitleColumn($value, $review));
-
-        yield $this->getRatingDisplayField();
-
-        yield TextField::new('authorName', 'admin.conversation.authorName.label')
-            ->setSortable(false);
-        yield TextField::new('authorEmail', 'admin.conversation.authorEmail.label')
-            ->setSortable(false);
-        yield TextField::new('referring', 'admin.conversation.referring.label')
-            ->setSortable(false);
-        yield TextField::new('tags', 'admin.conversation.tags.label')
-            ->setSortable(false)
-            ->formatValue(static function (mixed $value, mixed $entity): string {
-                if (! \is_object($entity) || ! method_exists($entity, 'getTags')) {
-                    return '';
-                }
-
-                $tags = $entity->getTags();
-
-                return \is_string($tags) ? $tags : '';
-            });
+            ->setTemplatePath('@PushwordConversation/admin/messageListTitleField.html.twig');
 
         yield DateTimeField::new('createdAt', 'admin.conversation.createdAt.label')
             ->setSortable(true);
-    }
-
-    private function formatTitleColumn(?string $title, ?Review $review): string
-    {
-        $title = trim((string) $title);
-
-        if ('' !== $title) {
-            return $title;
-        }
-
-        if (! $review instanceof Review) {
-            return '';
-        }
-
-        $content = strip_tags($review->getContent());
-        $content = trim($content);
-
-        if ('' === $content) {
-            return '';
-        }
-
-        return $this->truncateText($content);
-    }
-
-    private function truncateText(string $text, int $limit = 90): string
-    {
-        if (mb_strlen($text) <= $limit) {
-            return $text;
-        }
-
-        return rtrim(mb_substr($text, 0, $limit - 1)).'…';
     }
 
     private function getRatingFormField(): ChoiceField
@@ -215,17 +154,6 @@ final class ReviewCrudController extends ConversationCrudController
         }
 
         return $choices;
-    }
-
-    private static function formatRating(int $value): string
-    {
-        if ($value < 1) {
-            return '—';
-        }
-
-        $value = min($value, 5);
-
-        return str_repeat('★', $value).str_repeat('☆', 5 - $value).' '.$value.'/5';
     }
 
     private function registerRatingCustomProperty(): void
