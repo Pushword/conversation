@@ -60,11 +60,9 @@ class AppExtension
     #[AsTwigFunction('reviews', isSafe: ['html'], needsEnvironment: true)]
     public function renderReviewList(
         Twig $twig,
-        Page|array|string|null $pageOrTag = null,
+        Page|array|string $pageOrTag,
         int $limit = 10
     ): string {
-        $pageOrTag ??= $this->apps->getCurrentPage() ?? throw new Exception('No page or tag provided');
-
         $tags = $this->resolveReviewTag($pageOrTag);
         $reviews = [] === $tags ? []
           : $this->messageRepo->getPublishedReviewsByTag($tags, $limit);
@@ -80,10 +78,8 @@ class AppExtension
      */
     #[AsTwigFunction('reviewsCount', needsEnvironment: false)]
     public function count(
-        Page|array|string|null $pageOrTag = null,
+        Page|array|string $pageOrTag,
     ): int {
-        $pageOrTag ??= $this->apps->getCurrentPage() ?? throw new Exception('No page or tag provided');
-
         $tags = $this->resolveReviewTag($pageOrTag);
         $reviews = [] === $tags ? []
           : $this->messageRepo->getPublishedReviewsByTag($tags, 0);
