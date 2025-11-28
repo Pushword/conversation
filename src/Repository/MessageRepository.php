@@ -6,12 +6,15 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 use Pushword\Conversation\Entity\Message;
+use Pushword\Core\Repository\TagsRepositoryTrait;
 
 /**
  * @extends ServiceEntityRepository<Message>
  */
 class MessageRepository extends ServiceEntityRepository
 {
+    use TagsRepositoryTrait;
+
     public function __construct(
         ManagerRegistry $registry,
     ) {
@@ -52,11 +55,20 @@ class MessageRepository extends ServiceEntityRepository
         foreach ($tags as $i => $tag) {
             $expr = $queryBuilder->expr();
             $orConditions->add($expr->like('m.tags', ':tag'.$i));
-            $tagEscaped = '%"'.addslashes($tag).'"%';
+            $tagEscaped = '%"'.$this->escapeLikePattern($tag).'"%';
             $queryBuilder->setParameter('tag'.$i, $tagEscaped);
         }
 
         $queryBuilder->andWhere($orConditions);
+    }
+
+    /**
+     * Escape special characters for LIKE pattern matching.
+     * This properly escapes %, _, \, and " characters.
+     */
+    private function escapeLikePattern(string $value): string
+    {
+        return addcslashes($value, '%_\\"');
     }
 
     /**
@@ -89,17 +101,12 @@ class MessageRepository extends ServiceEntityRepository
     {
         $queryBuilder = $this->createQueryBuilder('m')
             ->select('m.tags')
-            ->setMaxResults(30000); // some kind of arbitrary parapet
+            ->setMaxResults(30000);
 
         /** @var array{tags: string[]}[] */
         $tags = $queryBuilder->getQuery()->getResult();
 
-        $allTags = [];
-        foreach ($tags as $entity) {
-            $allTags = array_merge($allTags, $entity['tags']);
-        }
-
-        return array_values(array_unique($allTags));
+        return $this->flattenTags($tags);
     }
 
     /**
