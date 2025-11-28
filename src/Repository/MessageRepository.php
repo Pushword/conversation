@@ -6,15 +6,12 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 use Pushword\Conversation\Entity\Message;
-use Pushword\Core\Repository\TagsRepositoryTrait;
 
 /**
  * @extends ServiceEntityRepository<Message>
  */
 class MessageRepository extends ServiceEntityRepository
 {
-    use TagsRepositoryTrait;
-
     public function __construct(
         ManagerRegistry $registry,
     ) {
@@ -101,12 +98,17 @@ class MessageRepository extends ServiceEntityRepository
     {
         $queryBuilder = $this->createQueryBuilder('m')
             ->select('m.tags')
-            ->setMaxResults(30000);
+            ->setMaxResults(30000); // some kind of arbitrary parapet
 
         /** @var array{tags: string[]}[] */
         $tags = $queryBuilder->getQuery()->getResult();
 
-        return $this->flattenTags($tags);
+        $allTags = [];
+        foreach ($tags as $entity) {
+            $allTags = array_merge($allTags, $entity['tags']);
+        }
+
+        return array_values(array_unique($allTags));
     }
 
     /**

@@ -31,7 +31,3 @@ final readonly class FlatSyncSubscriber implements EventSubscriberInterface
     }
 }
 
-
-
-
-
