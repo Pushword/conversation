@@ -36,6 +36,8 @@ conversationEmailInvalid: 'Invalid email address'
 conversationEmailOrPhonePlaceholder: 'Email or Phone'
 conversationEmailPlaceholder: Email
 conversationInputNotset: unknown
+conversationMessageBy: 'by '
+conversationMessagePostedOn: 'Message posted on'
 conversationNamePlaceholder: Name
 conversationPhoneNumberInvalid: 'Phone number in unknown format'
 conversationRegisterLabel: Register
