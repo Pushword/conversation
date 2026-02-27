@@ -29,7 +29,10 @@ class AppExtension
     #[AsTwigFunction('conversation')]
     public function getConversationRoute(string $type): string
     {
-        $page = $this->apps->getCurrentPage() ?? throw new Exception('Run from a Pushword Page context');
+        $page = $this->apps->getCurrentPage();
+        if (! $page instanceof Page) {
+            return '<!-- conversation degraded: no current page -->';
+        }
 
         $baseUrl = $this->router->generate('pushword_conversation', [
             'type' => $type,
