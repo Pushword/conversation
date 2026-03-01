@@ -2,7 +2,7 @@
 
 namespace Pushword\Conversation\EventSubscriber;
 
-use EasyCorp\Bundle\EasyAdminBundle\Config\Menu\ControllerMenuItem;
+use EasyCorp\Bundle\EasyAdminBundle\Config\Menu\CrudMenuItem;
 use EasyCorp\Bundle\EasyAdminBundle\Config\MenuItem;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Option\EA;
 use EasyCorp\Bundle\EasyAdminBundle\Contracts\Menu\MenuItemInterface;
@@ -55,7 +55,8 @@ final readonly class AdminMenuItemSubscriber implements EventSubscriberInterface
         $hosts = $this->apps->getHosts();
 
         if (\count($hosts) <= 1) {
-            return MenuItem::linkTo(ConversationCrudController::class, 'adminLabelConversation', 'fa fa-comments');
+            return MenuItem::linkToCrud('adminLabelConversation', 'fa fa-comments', Message::class)
+                ->setController(ConversationCrudController::class);
         }
 
         $subItems = [
@@ -75,7 +76,8 @@ final readonly class AdminMenuItemSubscriber implements EventSubscriberInterface
         $hosts = $this->apps->getHosts();
 
         if (\count($hosts) <= 1) {
-            return MenuItem::linkTo(ReviewCrudController::class, 'adminLabelReview', 'fa fa-star');
+            return MenuItem::linkToCrud('adminLabelReview', 'fa fa-star', Message::class)
+                ->setController(ReviewCrudController::class);
         }
 
         $subItems = [
@@ -90,15 +92,17 @@ final readonly class AdminMenuItemSubscriber implements EventSubscriberInterface
             ->setSubItems($subItems);
     }
 
-    private function createHiddenListItem(string $controller): ControllerMenuItem
+    private function createHiddenListItem(string $controller): CrudMenuItem
     {
-        return MenuItem::linkTo($controller, 'adminLabelList', 'fas fa-list')
-            ->setCssClass('d-none');
+        return MenuItem::linkToCrud('adminLabelList', 'fas fa-list', Message::class)
+            ->setCssClass('d-none')
+            ->setController($controller);
     }
 
-    private function createHostMenuItem(string $host, string $controller): ControllerMenuItem
+    private function createHostMenuItem(string $host, string $controller): CrudMenuItem
     {
-        $menuItem = MenuItem::linkTo($controller, $host, 'fa fa-globe')
+        $menuItem = MenuItem::linkToCrud($host, 'fa fa-globe', Message::class)
+            ->setController($controller)
             ->setQueryParameter('filters[host]', [
                 'comparison' => '=',
                 'value' => $host,
