@@ -9,14 +9,20 @@ use Pushword\Flat\FlatFileContentDirFinder;
 use Pushword\Flat\Sync\ConversationSyncInterface;
 use Symfony\Component\Filesystem\Filesystem;
 
-final readonly class ConversationSync implements ConversationSyncInterface
+final class ConversationSync implements ConversationSyncInterface
 {
+    private ?bool $globalMustImportCache = null;
+
+    private bool $globalExported = false;
+
+    private bool $globalImported = false;
+
     public function __construct(
-        private SiteRegistry $apps,
-        private FlatFileContentDirFinder $contentDirFinder,
-        public ConversationImporter $importer,
-        public ConversationExporter $exporter,
-        private Filesystem $filesystem = new Filesystem(),
+        private readonly SiteRegistry $apps,
+        private readonly FlatFileContentDirFinder $contentDirFinder,
+        public readonly ConversationImporter $importer,
+        public readonly ConversationExporter $exporter,
+        private readonly Filesystem $filesystem = new Filesystem(),
     ) {
     }
 
@@ -33,38 +39,112 @@ final readonly class ConversationSync implements ConversationSyncInterface
 
     public function import(?string $host = null): void
     {
+        $isGlobalMode = $this->isGlobalMode($host);
+
+        // In global mode, the CSV is identical for all hosts — import once
+        if ($isGlobalMode && $this->globalImported) {
+            return;
+        }
+
         $this->importer->import($host);
+
+        if ($isGlobalMode) {
+            $this->globalImported = true;
+        }
     }
 
     public function export(?string $host = null): void
     {
+        $isGlobalMode = $this->isGlobalMode($host);
+
+        // In global mode, the CSV is identical for all hosts — export once
+        if ($isGlobalMode && $this->globalExported) {
+            return;
+        }
+
+        if ($isGlobalMode) {
+            $this->globalExported = true;
+        }
+
+        // Skip if CSV is already up to date (no messages changed since last export)
+        $csvPath = $this->getCsvPath($host);
+        if ($this->filesystem->exists($csvPath)) {
+            $lastMessage = $this->importer->getLastUpdatedMessage(
+                $isGlobalMode ? null : $this->resolveHost($host),
+            );
+
+            if (null !== $lastMessage && filemtime($csvPath) >= $lastMessage->updatedAt->getTimestamp()) { // @phpstan-ignore method.nonObject
+                return;
+            }
+        }
+
         $this->exporter->export($host);
+
+        // Sync CSV timestamp with last message to prevent import/export cycles
+        $csvPath = $this->getCsvPath($host);
+        if ($this->filesystem->exists($csvPath)) {
+            $lastMessage = $this->importer->getLastUpdatedMessage(
+                $isGlobalMode ? null : $this->resolveHost($host),
+            );
+
+            if (null !== $lastMessage) {
+                touch($csvPath, $lastMessage->updatedAt->getTimestamp()); // @phpstan-ignore method.nonObject
+            }
+        }
     }
 
     public function mustImport(?string $host = null): bool
+    {
+        $isGlobalMode = $this->isGlobalMode($host);
+
+        // In global mode, the result is the same for all hosts
+        if ($isGlobalMode && null !== $this->globalMustImportCache) {
+            return $this->globalMustImportCache;
+        }
+
+        $csvPath = $this->getCsvPath($host);
+
+        if (! $this->filesystem->exists($csvPath)) {
+            $result = false;
+        } elseif (null === ($lastMessage = $this->importer->getLastUpdatedMessage(
+            $isGlobalMode ? null : $this->resolveHost($host),
+        ))) {
+            $result = true;
+        } else {
+            $result = filemtime($csvPath) > $lastMessage->updatedAt->getTimestamp(); // @phpstan-ignore method.nonObject
+        }
+
+        if ($isGlobalMode) {
+            $this->globalMustImportCache = $result;
+        }
+
+        return $result;
+    }
+
+    private function isGlobalMode(?string $host): bool
     {
         $app = null !== $host
             ? $this->apps->switchSite($host)->get()
             : $this->apps->get();
 
-        $isGlobalMode = (bool) $app->get('flat_conversation_global');
+        return (bool) $app->get('flat_conversation_global');
+    }
 
-        $csvPath = $isGlobalMode
-            ? $this->contentDirFinder->getBaseDir().'/conversation.csv'
-            : $this->contentDirFinder->get($app->getMainHost()).'/conversation.csv';
-
-        if (! $this->filesystem->exists($csvPath)) {
-            return false;
+    private function getCsvPath(?string $host): string
+    {
+        if ($this->isGlobalMode($host)) {
+            return $this->contentDirFinder->getBaseDir().'/conversation.csv';
         }
 
-        $lastMessage = $this->importer->getLastUpdatedMessage(
-            $isGlobalMode ? null : $app->getMainHost(),
-        );
+        return $this->contentDirFinder->get($this->resolveHost($host)).'/conversation.csv';
+    }
 
-        if (null === $lastMessage) {
-            return true;
-        }
+    private function resolveHost(?string $host): string
+    {
+        $app = null !== $host
+            ? $this->apps->switchSite($host)->get()
+            : $this->apps->get();
 
-        return filemtime($csvPath) > $lastMessage->updatedAt->getTimestamp(); // @phpstan-ignore method.nonObject (property hook guarantees non-null)
+        return $app->getMainHost();
     }
 }
