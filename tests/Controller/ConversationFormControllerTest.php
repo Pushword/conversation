@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Pushword\Conversation\Tests\Controller;
 
 use PHPUnit\Framework\Attributes\Group;
@@ -10,21 +12,21 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 #[Group('integration')]
-class ConversationFormControllerTest extends WebTestCase
+final class ConversationFormControllerTest extends WebTestCase
 {
     public function testNewsletterForm(): void
     {
-        $client = static::createClient();
+        $client = self::createClient();
 
         $server = ['HTTP_ORIGIN' => 'https://localhost.dev'];
-        $crawler = $client->request(Request::METHOD_GET, '/conversation/newsletter/test', [], [], $server);
+        $client->request(Request::METHOD_GET, '/conversation/newsletter/test', [], [], $server);
         self::assertSame(Response::HTTP_OK, $client->getResponse()->getStatusCode(), (string) $client->getResponse()->getContent());
         self::assertStringContainsString('pattern="[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{1,63}$"', (string) $client->getResponse()->getContent());
     }
 
     public function testMessageForm(): void
     {
-        $client = static::createClient();
+        $client = self::createClient();
 
         $server = ['HTTP_ORIGIN' => 'https://localhost.dev'];
         $crawler = $client->request(Request::METHOD_POST, '/conversation/message/test', [], [], $server);
@@ -41,7 +43,7 @@ class ConversationFormControllerTest extends WebTestCase
 
     public function testMessageFormDeduplication(): void
     {
-        $client = static::createClient();
+        $client = self::createClient();
         $server = ['HTTP_ORIGIN' => 'https://localhost.dev'];
         $uniqueContent = 'Dedup test message '.uniqid();
 
@@ -69,7 +71,7 @@ class ConversationFormControllerTest extends WebTestCase
         self::assertStringContainsString('Thank you', (string) $client->getResponse()->getContent());
 
         // Verify only one message was persisted
-        $em = static::getContainer()->get('doctrine')->getManager();
+        $em = self::getContainer()->get('doctrine')->getManager();
         $messages = $em->getRepository(Message::class)
             ->findBy(['content' => $uniqueContent]);
         self::assertCount(1, $messages, 'Duplicate message should not be persisted');
@@ -77,10 +79,10 @@ class ConversationFormControllerTest extends WebTestCase
 
     public function testNewsletterFormWithQueryParams(): void
     {
-        $client = static::createClient();
+        $client = self::createClient();
 
         $server = ['HTTP_ORIGIN' => 'https://localhost.dev'];
-        $crawler = $client->request(
+        $client->request(
             Request::METHOD_GET,
             '/conversation/newsletter/test?locale=fr&host=localhost.dev',
             [],
@@ -92,10 +94,10 @@ class ConversationFormControllerTest extends WebTestCase
 
     public function testConversationWithSlashInReferring(): void
     {
-        $client = static::createClient();
+        $client = self::createClient();
 
         $server = ['HTTP_ORIGIN' => 'https://localhost.dev'];
-        $crawler = $client->request(
+        $client->request(
             Request::METHOD_GET,
             '/conversation/newsletter/some/path/with/slashes?locale=en&host=localhost.dev',
             [],
@@ -107,6 +109,6 @@ class ConversationFormControllerTest extends WebTestCase
 
     public function getController(): ConversationFormController
     {
-        return static::getContainer()->get(ConversationFormController::class);
+        return self::getContainer()->get(ConversationFormController::class);
     }
 }

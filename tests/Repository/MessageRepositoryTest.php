@@ -1,10 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Pushword\Conversation\Tests\Repository;
 
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
-use Override;
 use PHPUnit\Framework\Attributes\Group;
 use Pushword\Conversation\Entity\Review;
 use Pushword\Conversation\Repository\MessageRepository;
@@ -23,17 +24,14 @@ final class MessageRepositoryTest extends KernelTestCase
     /** @var array<int> */
     private array $createdMessageIds = [];
 
-    #[Override]
     protected function setUp(): void
     {
         parent::setUp();
         self::bootKernel();
-
         $this->entityManager = self::getContainer()->get('doctrine.orm.default_entity_manager');
         $this->messageRepository = self::getContainer()->get(MessageRepository::class);
     }
 
-    #[Override]
     protected function tearDown(): void
     {
         if ([] !== $this->createdMessageIds) {

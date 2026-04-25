@@ -1,10 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Pushword\Conversation\Tests\Flat;
 
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
-use Override;
 use PHPUnit\Framework\Attributes\Group;
 use Pushword\Conversation\Entity\Message;
 use Pushword\Conversation\Entity\Review;
@@ -83,7 +84,6 @@ final class ConversationFlatTest extends KernelTestCase
         $this->csvPath = $contentDirFinder->getBaseDir().'/conversation.csv';
     }
 
-    #[Override]
     protected function tearDown(): void
     {
         // Nettoie les messages créés
@@ -127,7 +127,6 @@ final class ConversationFlatTest extends KernelTestCase
         }
 
         $this->temporaryCsvPaths = [];
-
         parent::tearDown();
     }
 
@@ -190,7 +189,6 @@ final class ConversationFlatTest extends KernelTestCase
 
         // Vérifie que mediaList est bien exporté avec des virgules
         $lines = explode("\n", $csvContent);
-        /** @var string $headerLine */
         $headerLine = $lines[0];
         self::assertStringContainsString('mediaList', $headerLine);
 
@@ -309,10 +307,8 @@ final class ConversationFlatTest extends KernelTestCase
         // Modifie le CSV pour ajouter un média inexistant dans la colonne mediaList
         $csvContentRaw = file_get_contents($this->csvPath);
         self::assertIsString($csvContentRaw);
-        /** @var string $csvContent */
         $csvContent = $csvContentRaw;
         $lines = explode("\n", $csvContent);
-        /** @var string $headerLine */
         $headerLine = $lines[0];
         $mediaListIndex = $this->getColumnIndex($headerLine, 'mediaList');
 
@@ -377,10 +373,8 @@ final class ConversationFlatTest extends KernelTestCase
         // Modifie le CSV pour utiliser le nom sans extension dans mediaList
         $csvContentRaw = file_get_contents($this->csvPath);
         self::assertIsString($csvContentRaw);
-        /** @var string $csvContent */
         $csvContent = $csvContentRaw;
         $lines = explode("\n", $csvContent);
-        /** @var string $headerLine */
         $headerLine = $lines[0];
         $mediaListIndex = $this->getColumnIndex($headerLine, 'mediaList');
 
@@ -433,8 +427,8 @@ final class ConversationFlatTest extends KernelTestCase
     public function testImportUpdatesMediaOnExistingMessage(): void
     {
         // Create media
-        $media1 = $this->createTestMedia('update-media-1.jpg');
-        $media2 = $this->createTestMedia('update-media-2.png');
+        $this->createTestMedia('update-media-1.jpg');
+        $this->createTestMedia('update-media-2.png');
 
         // Create a message without media
         $message = $this->createTestMessage('Message to update media', 'update@example.com', 'Update User');
@@ -456,7 +450,6 @@ final class ConversationFlatTest extends KernelTestCase
         $csvContent = file_get_contents($this->csvPath);
         self::assertIsString($csvContent);
         $lines = explode("\n", $csvContent);
-        /** @var string $headerLine */
         $headerLine = $lines[0];
         $mediaListIndex = $this->getColumnIndex($headerLine, 'mediaList');
         self::assertGreaterThanOrEqual(0, $mediaListIndex);
@@ -514,7 +507,6 @@ final class ConversationFlatTest extends KernelTestCase
         $csvContent = file_get_contents($this->csvPath);
         self::assertIsString($csvContent);
         $lines = explode("\n", $csvContent);
-        /** @var string $headerLine */
         $headerLine = $lines[0];
         $mediaListIndex = $this->getColumnIndex($headerLine, 'mediaList');
 

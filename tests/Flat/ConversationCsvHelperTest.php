@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Pushword\Conversation\Tests\Flat;
 
 use DateTimeImmutable;
@@ -7,7 +9,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Pushword\Conversation\Flat\ConversationCsvHelper;
 
-class ConversationCsvHelperTest extends TestCase
+final class ConversationCsvHelperTest extends TestCase
 {
     public function testFormatDateWithNull(): void
     {

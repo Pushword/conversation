@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Pushword\Conversation\Tests\DependencyInjection;
 
 use PHPUnit\Framework\Attributes\Group;
@@ -11,7 +13,7 @@ use Twig\Environment as Twig;
 use Twig\Loader\FilesystemLoader;
 
 #[Group('integration')]
-class ConfigurationTest extends KernelTestCase
+final class ConfigurationTest extends KernelTestCase
 {
     public function testConf(): void
     {
