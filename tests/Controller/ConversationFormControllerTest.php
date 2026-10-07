@@ -14,6 +14,9 @@ use Symfony\Component\HttpFoundation\Response;
 #[Group('integration')]
 final class ConversationFormControllerTest extends WebTestCase
 {
+    /** The `anonymous_content` rate limiter's `limit`, set in core's framework.php. */
+    private const int SUBMISSION_LIMIT = 20;
+
     public function testNewsletterForm(): void
     {
         $client = self::createClient();
@@ -204,6 +207,195 @@ final class ConversationFormControllerTest extends WebTestCase
         $client->request(Request::METHOD_GET, '/conversation/newsletter/test');
         self::assertSame(Response::HTTP_OK, $client->getResponse()->getStatusCode(), (string) $client->getResponse()->getContent());
         self::assertNull($client->getResponse()->headers->get('Access-Control-Allow-Origin'));
+    }
+
+    public function testOriginFromTheBundleConfigIsAllowed(): void
+    {
+        $client = self::createClient();
+
+        $client->request(
+            Request::METHOD_GET,
+            '/conversation/newsletter/test?host=localhost.dev',
+            [],
+            [],
+            ['HTTP_ORIGIN' => 'https://static.localhost.dev'],
+        );
+
+        self::assertSame(Response::HTTP_OK, $client->getResponse()->getStatusCode(), (string) $client->getResponse()->getContent());
+        self::assertSame('https://static.localhost.dev', $client->getResponse()->headers->get('Access-Control-Allow-Origin'));
+    }
+
+    /** Without `?host=`, the origin is checked against the site the request was sent to. */
+    public function testOriginIsCheckedAgainstTheRequestHost(): void
+    {
+        $client = self::createClient();
+
+        $client->request(
+            Request::METHOD_GET,
+            '/conversation/newsletter/test',
+            server: ['HTTP_HOST' => 'pushword.piedweb.com', 'HTTP_ORIGIN' => 'https://pushword.piedweb.com'],
+        );
+
+        self::assertSame(Response::HTTP_OK, $client->getResponse()->getStatusCode(), (string) $client->getResponse()->getContent());
+        self::assertResponseHeaderSame('Access-Control-Allow-Origin', 'https://pushword.piedweb.com');
+    }
+
+    /** The origin check and the CORS headers belong to the conversation route only. */
+    public function testOtherRoutesIgnoreTheOrigin(): void
+    {
+        $client = self::createClient();
+
+        $client->request(Request::METHOD_GET, '/login', server: ['HTTP_ORIGIN' => 'https://evil.example']);
+
+        self::assertResponseIsSuccessful();
+        self::assertResponseNotHasHeader('Access-Control-Allow-Origin');
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function unauthorizedOriginProvider(): iterable
+    {
+        yield 'unrelated origin' => ['https://evil.example'];
+        // Origins match exactly: starting like a trusted one is not enough.
+        yield 'trusted origin as a prefix' => ['https://static.localhost.dev.evil.tld'];
+        // What a browser sends from a sandboxed iframe or a file:// page.
+        yield 'opaque origin' => ['null'];
+        // Each site trusts its own hosts, not the other sites of the install.
+        yield 'another site of the install' => ['https://pushword.piedweb.com'];
+        // Outside the dev environment, a site host is trusted over https only.
+        yield 'site host over plain http' => ['http://localhost.dev'];
+    }
+
+    #[DataProvider('unauthorizedOriginProvider')]
+    public function testUnauthorizedOriginIsForbidden(string $origin): void
+    {
+        $client = self::createClient();
+
+        $client->request(
+            Request::METHOD_GET,
+            '/conversation/newsletter/test?host=localhost.dev',
+            server: ['HTTP_ORIGIN' => $origin],
+        );
+
+        $content = (string) $client->getResponse()->getContent();
+        self::assertSame(Response::HTTP_FORBIDDEN, $client->getResponse()->getStatusCode(), $content);
+        // The exact message: the refusal must not reveal which origins are trusted.
+        self::assertSelectorTextSame('title', 'Origin `'.$origin.'` is not allowed to load conversation forms. (403 Forbidden)');
+        self::assertNull($client->getResponse()->headers->get('Access-Control-Allow-Origin'));
+    }
+
+    /**
+     * CORS only hides the response from the browser: a cross-origin form POST still
+     * reaches the server, so the origin check is what keeps it from being saved.
+     */
+    public function testUnauthorizedOriginCannotPostAMessage(): void
+    {
+        $client = self::createClient();
+        $content = 'Cross-origin message '.uniqid();
+        $postFrom = static fn (string $origin): mixed => $client->request(
+            Request::METHOD_POST,
+            '/conversation/message/test?host=localhost.dev',
+            ['form' => ['authorEmail' => 'cross-origin@example.tld', 'authorName' => 'Test', 'content' => $content]],
+            server: ['HTTP_ORIGIN' => $origin, 'REMOTE_ADDR' => '192.0.2.52'],
+        );
+        $savedMessages = static fn (): array => self::getContainer()->get('doctrine')->getRepository(Message::class)
+            ->findBy(['content' => $content]);
+
+        $postFrom('https://evil.example');
+        self::assertResponseStatusCodeSame(Response::HTTP_FORBIDDEN);
+        self::assertCount(0, $savedMessages());
+
+        // The same submission from the site's own origin is saved: the origin alone was refused.
+        $postFrom('https://localhost.dev');
+        self::assertResponseIsSuccessful();
+        self::assertCount(1, $savedMessages());
+    }
+
+    public function testUnauthorizedOriginDoesNotSpendTheVisitorRateLimit(): void
+    {
+        $client = self::createClient();
+        $postFrom = static fn (string $origin): mixed => $client->request(
+            Request::METHOD_POST,
+            '/conversation/message/test?host=localhost.dev',
+            server: ['HTTP_ORIGIN' => $origin, 'REMOTE_ADDR' => '192.0.2.53'],
+        );
+
+        // A hostile page makes its visitor's browser post as often as the limit allows.
+        for ($attempt = 1; $attempt <= self::SUBMISSION_LIMIT; ++$attempt) {
+            $postFrom('https://evil.example');
+            self::assertResponseStatusCodeSame(Response::HTTP_FORBIDDEN);
+        }
+
+        $postFrom('https://localhost.dev');
+        self::assertResponseIsSuccessful();
+    }
+
+    /** @return iterable<string, array{?string, string}> */
+    public static function rateLimitedOriginProvider(): iterable
+    {
+        // A statically generated page posting to its live host.
+        yield 'trusted cross-origin page' => ['https://static.localhost.dev', '192.0.2.54'];
+        // A script posting directly sends no Origin: it is the case the limiter exists for.
+        yield 'no origin' => [null, '192.0.2.55'];
+    }
+
+    #[DataProvider('rateLimitedOriginProvider')]
+    public function testSubmissionsBeyondTheLimitAreRefused(?string $origin, string $clientIp): void
+    {
+        $client = self::createClient();
+        $server = ['REMOTE_ADDR' => $clientIp];
+        if (null !== $origin) {
+            $server['HTTP_ORIGIN'] = $origin;
+        }
+
+        $url = '/conversation/message/test?host=localhost.dev';
+
+        for ($attempt = 1; $attempt <= self::SUBMISSION_LIMIT; ++$attempt) {
+            $client->request(Request::METHOD_POST, $url, server: $server);
+            self::assertResponseIsSuccessful();
+        }
+
+        $client->request(Request::METHOD_POST, $url, server: $server);
+        self::assertResponseStatusCodeSame(Response::HTTP_TOO_MANY_REQUESTS);
+        self::assertResponseHasHeader('Retry-After');
+        // A trusted page posting cross-origin must be able to read the refusal and its delay.
+        $corsHeaders = [
+            'Access-Control-Allow-Origin' => $origin,
+            'Access-Control-Allow-Credentials' => 'true',
+            'Access-Control-Expose-Headers' => 'Retry-After',
+        ];
+        foreach ($corsHeaders as $name => $value) {
+            self::assertSame(null === $origin ? null : $value, $client->getResponse()->headers->get($name), $name);
+        }
+
+        // Only submissions are limited: the form can still be displayed.
+        $client->request(Request::METHOD_GET, $url, server: $server);
+        self::assertResponseIsSuccessful();
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function notFoundProvider(): iterable
+    {
+        yield 'unknown form type' => ['/conversation/unknown-type/test?host=localhost.dev'];
+        yield 'step out of range' => ['/conversation/newsletter/test?host=localhost.dev&step=99'];
+        // Steps are numbered from 1.
+        yield 'step zero' => ['/conversation/newsletter/test?host=localhost.dev&step=0'];
+        yield 'step the form does not have' => ['/conversation/message/test?host=localhost.dev&step=2'];
+        yield 'expired workflow' => ['/conversation/newsletter/test?host=localhost.dev&step=2&token='.str_repeat('a', 64)];
+    }
+
+    /**
+     * A URL the form cannot answer is not found, not a server error, and a trusted
+     * cross-origin page can read that refusal instead of a bare network error.
+     */
+    #[DataProvider('notFoundProvider')]
+    public function testUnknownConversationIsNotFoundAndReadableCrossOrigin(string $url): void
+    {
+        $client = self::createClient();
+
+        $client->request(Request::METHOD_GET, $url, server: ['HTTP_ORIGIN' => 'https://static.localhost.dev']);
+
+        self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
+        self::assertResponseHeaderSame('Access-Control-Allow-Origin', 'https://static.localhost.dev');
     }
 
     public function testConversationWithSlashInReferring(): void

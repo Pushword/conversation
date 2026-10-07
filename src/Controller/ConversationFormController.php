@@ -5,22 +5,19 @@ declare(strict_types=1);
 namespace Pushword\Conversation\Controller;
 
 use Doctrine\Persistence\ManagerRegistry;
-use ErrorException;
 use Exception;
 use Pushword\Conversation\Entity\Message;
 use Pushword\Conversation\Form\ConversationFormInterface;
 use Pushword\Conversation\Repository\MessageRepository;
 use Pushword\Core\Site\SiteRegistry;
 use ReflectionClass;
-
-use function Safe\json_encode;
-
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\Routing\Attribute\Route;
@@ -34,11 +31,6 @@ final class ConversationFormController extends AbstractController
 {
     private ?ConversationFormInterface $form = null;
 
-    /**
-     * @var string[]
-     */
-    private array $possibleOrigins = [];
-
     public function __construct(
         private readonly TranslatorInterface $translator,
         private readonly SiteRegistry $apps,
@@ -47,8 +39,6 @@ final class ConversationFormController extends AbstractController
         private readonly TokenStorageInterface $tokenStorage,
         private readonly RouterInterface $router,
         private readonly ManagerRegistry $doctrine,
-        #[Autowire(param: 'kernel.environment')]
-        private readonly string $env,
         private readonly MessageRepository $messageRepo,
         private readonly CacheInterface $cache,
         #[Autowire(service: 'limiter.anonymous_content')]
@@ -82,7 +72,7 @@ final class ConversationFormController extends AbstractController
 
         if (! class_exists($class)
             || ! new ReflectionClass($class)->implementsInterface(ConversationFormInterface::class)) {
-            throw new Exception('`'.$type."` does'nt exist.");
+            throw new NotFoundHttpException('Conversation form `'.$type.'` does not exist.');
         }
 
         /** @var class-string<ConversationFormInterface> $class */
@@ -115,63 +105,6 @@ final class ConversationFormController extends AbstractController
         );
     }
 
-    /**
-     * @return mixed[]
-     */
-    private function getPossibleOrigins(Request $request): array
-    {
-        // $host = $request->host;
-        $app = $this->apps->get();
-
-        if ([] !== $this->possibleOrigins) {
-            return $this->possibleOrigins;
-        }
-
-        /** @var string[]|string */
-        $convertsationPossibleOrigins = $app->get('conversation_possible_origins');
-
-        if (\is_string($convertsationPossibleOrigins)) {
-            $this->possibleOrigins = explode(' ', $convertsationPossibleOrigins);
-        }
-
-        if ('dev' === $this->env) {
-            // Trust the dev server's own origin whatever port it picked (the
-            // hardcoded 8000-8002 miss any other one, e.g. when 8000 is taken).
-            $this->possibleOrigins[] = $request->getSchemeAndHttpHost();
-            $this->possibleOrigins[] = 'http://'.$request->getHost();
-            $this->possibleOrigins[] = 'https://'.$request->getHost();
-            $this->possibleOrigins[] = 'http://'.$request->getHost().':8000';
-            $this->possibleOrigins[] = 'http://'.$request->getHost().':8001';
-            $this->possibleOrigins[] = 'http://'.$request->getHost().':8002';
-        }
-
-        foreach ($app->hosts as $host) {
-            $this->possibleOrigins[] = 'https://'.$host;
-        }
-
-        return $this->possibleOrigins;
-    }
-
-    private function initResponse(Request $request): Response
-    {
-        $response = new Response();
-
-        $origin = $request->headers->get('origin');
-
-        if (null !== $origin) {
-            if (! \in_array($origin, $this->getPossibleOrigins($request), true)) {
-                throw new ErrorException('origin sent is not authorized ('.$origin.') '.json_encode($this->getPossibleOrigins($request)).'.');
-            }
-
-            $response->headers->set('Access-Control-Allow-Credentials', 'true');
-            $response->headers->set('Access-Control-Allow-Methods', 'GET, POST, PATCH, PUT, DELETE, OPTIONS');
-            $response->headers->set('Access-Control-Allow-Headers', 'Origin, Content-Type, X-Auth-Token');
-            $response->headers->set('Access-Control-Allow-Origin', $origin);
-        }
-
-        return $response;
-    }
-
     #[Route(path: '/conversation/{type}/{referring}', name: 'pushword_conversation', requirements: [
         'type' => '[a-zA-Z0-9-]*',
         'referring' => '[-A-Za-z0-9_\/\.]*',
@@ -179,16 +112,17 @@ final class ConversationFormController extends AbstractController
     public function show(Request $request, string $type): Response
     {
         // Reset per-request state. This controller is a shared service, so under a
-        // long-running worker (FrankenPHP, RoadRunner…) $form and $possibleOrigins
-        // would survive between requests and pin every later request to the first
-        // request's host/locale/origin. show() is the only entrypoint, so clearing
-        // here is enough to guarantee a fresh resolution per request.
+        // long-running worker (FrankenPHP, RoadRunner…) $form would survive between
+        // requests and pin every later request to the first request's host/locale.
+        // show() is the only entrypoint, so clearing here is enough to guarantee a
+        // fresh resolution per request.
         $this->form = null;
-        $this->possibleOrigins = [];
 
         $host = $request->query->getString('host') ?: $request->getHost();
         $this->apps->switchSite($host);
 
+        // A foreign origin was already refused by ConversationCorsListener, before this
+        // limiter: a hostile page cannot spend its visitors' submission quota.
         if ($request->isMethod(Request::METHOD_POST)) {
             $limit = $this->anonymousContentLimiter
                 ->create(($request->getClientIp() ?? 'unknown').':'.$this->apps->get()->getMainHost())
@@ -203,7 +137,7 @@ final class ConversationFormController extends AbstractController
         // The locale is resolved by ConversationLocaleListener, early enough for the
         // translator and the validator to pick it up.
 
-        $response = $this->initResponse($request);
+        $response = new Response();
 
         $form = $this->getFormManager($type, $request)->getCurrentStep()->getForm();
         $form->handleRequest($request);
